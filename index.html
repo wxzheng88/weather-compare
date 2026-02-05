@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="天气预报对比工具 - 对比安达市和甘南县未来5天天气预报">
-    <meta name="keywords" weather, forecast, comparison, China, Open-Meteo>
+    <meta name="keywords" weather, forecast, comparison, China>
     <title>天气预报对比 | 安达市 vs 甘南县</title>
     <link rel="stylesheet" href="styles.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
@@ -20,61 +20,65 @@
                     <i class="fas fa-cloud-sun"></i>
                     天气预报对比
                 </h1>
-                <p class="app-subtitle">对比安达市和甘南县未来5天天气情况</p>
+                <p class="app-subtitle">对比安达市和甘南县未来5天天气预报</p>
             </div>
         </header>
 
         <main class="main-content">
-            <div class="weather-comparison">
-                <!-- 安达市 -->
-                <section class="city-section" id="city-anda">
-                    <div class="city-header">
-                        <div class="city-info">
-                            <i class="fas fa-city"></i>
-                            <h2>安达市</h2>
-                            <span class="province">黑龙江省</span>
-                        </div>
-                        <div class="last-updated" id="anda-updated"></div>
-                    </div>
-                    <div class="weather-grid" id="anda-weather">
-                        <!-- 天气卡片将通过JS动态插入 -->
-                    </div>
-                    <div class="loading-skeleton" id="anda-loading">
-                        <div class="skeleton-card"></div>
-                        <div class="skeleton-card"></div>
-                        <div class="skeleton-card"></div>
-                        <div class="skeleton-card"></div>
-                        <div class="skeleton-card"></div>
-                    </div>
-                    <div class="error-message" id="anda-error" style="display: none;"></div>
-                </section>
+            <div class="app-layout">
+                <!-- 左侧城市选择 -->
+                <aside class="city-sidebar">
+                    <h2 class="sidebar-title">
+                        <i class="fas fa-map-marker-alt"></i>
+                        选择城市
+                    </h2>
+                    <ul class="city-list">
+                        <li class="city-item active" data-city="anda">
+                            <div class="city-info">
+                                <span class="city-icon">🏙️</span>
+                                <div class="city-details">
+                                    <span class="city-name">安达市</span>
+                                    <span class="city-province">黑龙江省</span>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="city-item" data-city="gannan">
+                            <div class="city-info">
+                                <span class="city-icon">🏙️</span>
+                                <div class="city-details">
+                                    <span class="city-name">甘南县</span>
+                                    <span class="city-province">黑龙江省</span>
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
+                </aside>
 
-                <!-- 分隔线 -->
-                <div class="divider">
-                    <span class="divider-text">VS</span>
-                </div>
-
-                <!-- 甘南县 -->
-                <section class="city-section" id="city-gannan">
-                    <div class="city-header">
-                        <div class="city-info">
-                            <i class="fas fa-building"></i>
-                            <h2>甘南县</h2>
-                            <span class="province">黑龙江省</span>
+                <!-- 右侧天气对比 -->
+                <section class="weather-section">
+                    <div class="weather-header" id="weather-header">
+                        <div class="city-title">
+                            <h2 id="current-city-name">安达市</h2>
+                            <span class="city-coords" id="current-city-coords">46.39°N, 125.32°E</span>
                         </div>
-                        <div class="last-updated" id="gannan-updated"></div>
+                        <button class="refresh-btn" id="refresh-btn" title="刷新数据">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
                     </div>
-                    <div class="weather-grid" id="gannan-weather">
-                        <!-- 天气卡片将通过JS动态插入 -->
+
+                    <div class="loading-overlay" id="loading">
+                        <div class="spinner"></div>
+                        <p>正在加载天气数据...</p>
                     </div>
-                    <div class="loading-skeleton" id="gannan-loading">
-                        <div class="skeleton-card"></div>
-                        <div class="skeleton-card"></div>
-                        <div class="skeleton-card"></div>
-                        <div class="skeleton-card"></div>
-                        <div class="skeleton-card"></div>
+
+                    <div class="weather-content" id="weather-content">
+                        <!-- 天气预报将通过JS动态插入 -->
                     </div>
-                    <div class="error-message" id="gannan-error" style="display: none;"></div>
+
+                    <div class="error-message" id="error-message" style="display: none;">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span id="error-text"></span>
+                    </div>
                 </section>
             </div>
         </main>
@@ -84,11 +88,15 @@
                 <p>
                     <i class="fas fa-database"></i>
                     数据来源：
-                    <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a>
-                    &nbsp;|&nbsp;
-                    <i class="fas fa-sync-alt" id="refresh-btn" title="刷新数据"></i>
+                    <span class="provider-link" style="color: #6c5ce7;">Open-Meteo</span>
+                    <span class="separator">|</span>
+                    <span class="provider-link" style="color: #e17055;">OpenWeatherMap</span>
+                    <span class="separator">|</span>
+                    <span class="provider-link" style="color: #0984e3;">WeatherAPI</span>
+                    <span class="separator">|</span>
+                    <span class="provider-link" style="color: #00b894;">心知天气</span>
                 </p>
-                <p class="update-time" id="global-updated"></p>
+                <p class="update-time" id="last-updated"></p>
             </div>
         </footer>
     </div>
@@ -99,16 +107,31 @@
             <button class="modal-close" id="modal-close">
                 <i class="fas fa-times"></i>
             </button>
+
             <div class="modal-header" id="modal-header">
                 <!-- 动态内容 -->
             </div>
+
             <div class="modal-body" id="modal-body">
                 <!-- 动态内容 -->
             </div>
         </div>
     </div>
 
-    <script src="cities.js?v=2.0"></script>
-    <script src="app.js?v=2.0"></script>
+    <!-- 高德地图容器 -->
+    <div class="modal-map-container" id="map-modal">
+        <div class="map-content">
+            <button class="modal-close map-close" id="map-close">
+                <i class="fas fa-times"></i>
+            </button>
+            <div id="amap-container"></div>
+        </div>
+    </div>
+
+    <script src="https://webapi.amap.com/maps?v=2.0&key=您的地图Key"></script>
+    <script src="cities.js"></script>
+    <script src="providers.js"></script>
+    <script src="map.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>

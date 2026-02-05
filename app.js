@@ -1,42 +1,63 @@
 /**
  * 天气预报对比应用
- * 使用 Open-Meteo API 获取天气数据
  */
 
-class WeatherComparison {
+class WeatherCompare {
     constructor() {
         this.cities = CITIES;
+        this.providers = PROVIDERS;
+        this.currentCity = DEFAULT_CITY;
         this.weatherData = {};
-        this.isLoading = { anda: false, gannan: false };
-        this.apiBase = 'https://api.open-meteo.com/v1/forecast';
-        
+        this.isLoading = false;
+
         this.init();
     }
 
-    /**
-     * 初始化应用
-     */
     init() {
         this.bindEvents();
         this.loadWeatherData();
     }
 
-    /**
-     * 绑定事件监听器
-     */
     bindEvents() {
+        // 城市选择
+        document.querySelectorAll('.city-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                const cityId = e.currentTarget.dataset.city;
+                this.switchCity(cityId);
+            });
+        });
+
+        // 刷新按钮
         const refreshBtn = document.getElementById('refresh-btn');
         if (refreshBtn) {
-            refreshBtn.addEventListener('click', () => this.refreshAll());
+            refreshBtn.addEventListener('click', () => this.refresh());
         }
 
+        // 关闭弹窗
+        this.bindModalClose();
+    }
+
+    bindModalClose() {
         const modalClose = document.getElementById('modal-close');
-        const modalOverlay = document.getElementById('detail-modal');
-        
+        const mapClose = document.getElementById('map-close');
+
         if (modalClose) {
             modalClose.addEventListener('click', () => this.closeModal());
         }
-        
+
+        if (mapClose) {
+            mapClose.addEventListener('click', () => this.closeMapModal());
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                this.closeModal();
+                this.closeMapModal();
+            }
+        });
+
+        // 点击弹窗外部关闭
+        const modalOverlay = document.getElementById('detail-modal');
         if (modalOverlay) {
             modalOverlay.addEventListener('click', (e) => {
                 if (e.target === modalOverlay) {
@@ -45,411 +66,393 @@ class WeatherComparison {
             });
         }
 
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                this.closeModal();
+        const mapModal = document.getElementById('map-modal');
+        if (mapModal) {
+            mapModal.addEventListener('click', (e) => {
+                if (e.target === mapModal) {
+                    this.closeMapModal();
+                }
+            });
+        }
+    }
+
+    switchCity(cityId) {
+        if (this.isLoading || cityId === this.currentCity) return;
+
+        // 更新选中状态
+        document.querySelectorAll('.city-item').forEach(item => {
+            item.classList.toggle('active', item.dataset.city === cityId);
+        });
+
+        this.currentCity = cityId;
+        this.loadWeatherData();
+    }
+
+    async loadWeatherData() {
+        if (this.isLoading) return;
+
+        this.isLoading = true;
+        this.showLoading(true);
+        this.hideError();
+
+        const city = this.cities[this.currentCity];
+        if (!city) {
+            this.showError('未知城市');
+            this.isLoading = false;
+            return;
+        }
+
+        // 更新标题
+        this.updateCityHeader(city);
+
+        try {
+            // 获取4家供应商数据
+            const results = await this.fetchAllProviders(city);
+
+            // 合并数据
+            this.weatherData = this.mergeWeatherData(results);
+
+            // 渲染
+            this.renderWeather();
+            this.updateLastRefreshTime();
+
+        } catch (error) {
+            console.error('获取天气数据失败:', error);
+            this.showError(`加载失败: ${error.message}`);
+        }
+
+        this.isLoading = false;
+        this.showLoading(false);
+    }
+
+    async fetchAllProviders(city) {
+        const providerIds = ['openmeteo', 'openweathermap', 'weatherapi', 'xinzhi'];
+        const results = {};
+
+        const promises = providerIds.map(async (providerId) => {
+            try {
+                const api = new WeatherAPI(providerId);
+                const data = await api.getForecast(city);
+                results[providerId] = {
+                    success: true,
+                    data: data
+                };
+            } catch (error) {
+                console.error(`${providerId} 获取失败:`, error);
+                results[providerId] = {
+                    success: false,
+                    error: error.message,
+                    providerName: this.providers[providerId]?.nameCn || providerId
+                };
             }
         });
+
+        await Promise.all(promises);
+        return results;
     }
 
-    /**
-     * 加载所有城市的天气数据
-     */
-    async loadWeatherData() {
-        const promises = [
-            this.fetchWeatherData('anda'),
-            this.fetchWeatherData('gannan')
-        ];
+    mergeWeatherData(results) {
+        const merged = {
+            city: null,
+            days: {}
+        };
 
-        try {
-            await Promise.all(promises);
-            this.updateLastRefreshTime();
-        } catch (error) {
-            console.error('加载天气数据失败:', error);
-            this.showError('anda', '加载数据失败，请刷新页面重试');
-            this.showError('gannan', '加载数据失败，请刷新页面重试');
-        }
-    }
+        Object.entries(results).forEach(([providerId, result]) => {
+            const provider = this.providers[providerId];
 
-    /**
-     * 刷新所有数据
-     */
-    async refreshAll() {
-        this.clearData();
-        await this.loadWeatherData();
-    }
+            if (result.success && result.data) {
+                if (!merged.city) {
+                    merged.city = result.data.city;
+                }
 
-    /**
-     * 清空现有数据
-     */
-    clearData() {
-        document.getElementById('anda-weather').innerHTML = '';
-        document.getElementById('gannan-weather').innerHTML = '';
-        this.showLoading('anda');
-        this.showLoading('gannan');
-    }
+                result.data.forecasts.forEach((forecast, index) => {
+                    const dateKey = forecast.date;
+                    if (!merged.days[dateKey]) {
+                        merged.days[dateKey] = {
+                            date: forecast.date,
+                            tempHigh: null,
+                            tempLow: null,
+                            weatherIcon: null,
+                            weatherDesc: null,
+                            providers: {}
+                        };
+                    }
 
-    /**
-     * 获取单个城市的天气数据
-     * @param {string} cityId - 城市ID
-     */
-    async fetchWeatherData(cityId) {
-        const city = this.cities[cityId];
-        if (!city) return;
+                    merged.days[dateKey].providers[providerId] = {
+                        providerId: providerId,
+                        providerName: provider.nameCn,
+                        icon: provider.icon,
+                        color: provider.color,
+                        ...forecast
+                    };
 
-        this.isLoading[cityId] = true;
-        this.showLoading(cityId);
-
-        try {
-            const params = new URLSearchParams({
-                latitude: city.latitude,
-                longitude: city.longitude,
-                daily: [
-                    'weathercode',
-                    'temperature_2m_max',
-                    'temperature_2m_min',
-                    'apparent_temperature_max',
-                    'apparent_temperature_min',
-                    'precipitation_sum',
-                    'precipitation_probability_max',
-                    'windspeed_10m_max',
-                    'uv_index_max',
-                    'sunrise',
-                    'sunset'
-                ].join(','),
-                timezone: city.timezone,
-                forecast_days: 5
-            });
-
-            const url = `${this.apiBase}?${params}`;
-            console.log(`Fetching weather for ${city.name}:`, url);
-
-            const response = await fetch(url, {
-                method: 'GET',
-                mode: 'cors',
-                cache: 'no-cache'
-            });
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error(`API Error for ${city.name}:`, errorText);
-                throw new Error(`HTTP error! status: ${response.status}`);
+                    // 使用第一个有效数据作为默认显示
+                    if (merged.days[dateKey].tempHigh === null) {
+                        merged.days[dateKey].tempHigh = forecast.tempHigh;
+                        merged.days[dateKey].tempLow = forecast.tempLow;
+                        merged.days[dateKey].weatherIcon = forecast.weatherIcon;
+                        merged.days[dateKey].weatherDesc = forecast.weatherDesc;
+                    }
+                });
             }
+        });
 
-            const data = await response.json();
-            console.log(`Weather data received for ${city.name}:`, data.daily.time.length, 'days');
-            this.weatherData[cityId] = data;
-            this.hideLoading(cityId);
-            this.renderWeatherCards(cityId, data);
-
-        } catch (error) {
-            console.error(`获取${city.name}天气数据失败:`, error);
-            this.hideLoading(cityId);
-            this.showError(cityId, `无法获取天气数据: ${error.message}`);
-        }
+        return merged;
     }
 
-    /**
-     * 渲染天气卡片
-     * @param {string} cityId - 城市ID
-     * @param {Object} data - 天气数据
-     */
-    renderWeatherCards(cityId, data) {
-        const container = document.getElementById(`${cityId}-weather`);
+    renderWeather() {
+        const container = document.getElementById('weather-content');
         if (!container) return;
 
         container.innerHTML = '';
-        const daily = data.daily;
 
-        daily.time.forEach((dateStr, index) => {
-            const card = this.createWeatherCard(cityId, dateStr, daily, index);
-            container.appendChild(card);
-        });
+        if (!this.weatherData.days || Object.keys(this.weatherData.days).length === 0) {
+            container.innerHTML = `
+                <div class="error-message">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span>暂无天气数据，请检查网络或API配置</span>
+                </div>
+            `;
+            return;
+        }
 
-        this.updateLastUpdated(cityId);
+        // 按日期排序并渲染
+        Object.values(this.weatherData.days)
+            .sort((a, b) => new Date(a.date) - new Date(b.date))
+            .forEach(day => {
+                const dayElement = this.createDaySection(day);
+                container.appendChild(dayElement);
+            });
     }
 
-    /**
-     * 创建单个天气卡片
-     * @param {string} cityId - 城市ID
-     * @param {string} dateStr - 日期字符串
-     * @param {Object} daily - 每日数据
-     * @param {number} index - 索引
-     * @returns {HTMLElement} 卡片元素
-     */
-    createWeatherCard(cityId, dateStr, daily, index) {
-        const card = document.createElement('div');
-        card.className = 'weather-card';
-        card.dataset.city = cityId;
-        card.dataset.index = index;
+    createDaySection(day) {
+        const section = document.createElement('div');
+        section.className = 'day-section';
+        section.dataset.date = day.date;
 
-        const dateInfo = formatDate(dateStr);
-        const weatherInfo = getWeatherInfo(daily.weathercode[index]);
-        const tempMax = daily.temperature_2m_max[index];
-        const tempMin = daily.temperature_2m_min[index];
-        const apparentMax = daily.apparent_temperature_max[index];
-        const apparentMin = daily.apparent_temperature_min[index];
+        const dateInfo = formatDate(day.date);
 
-        card.innerHTML = `
-            <div class="card-header">
-                <div>
-                    <span class="card-date">${dateInfo.full}</span>
-                    <span class="card-weekday"> ${dateInfo.weekday}</span>
+        section.innerHTML = `
+            <div class="day-header" onclick="weatherCompare.toggleDay('${day.date}')">
+                <div class="day-title">
+                    <span class="day-date">${dateInfo.full}</span>
+                    <span class="day-weekday">${dateInfo.weekday}</span>
+                </div>
+                <div class="day-weather">
+                    <span class="day-weather-icon">${day.weatherIcon || '☀️'}</span>
+                    <span class="day-weather-desc">${day.weatherDesc || '暂无数据'}</span>
                 </div>
             </div>
-            <div class="card-main">
-                <div class="weather-icon">${weatherInfo.icon}</div>
-                <div class="weather-desc">${weatherInfo.desc}</div>
-                <div class="temp-range">
-                    <span class="temp-high">${formatTemp(tempMax)}</span>
-                    <span class="temp-low"> / ${formatTemp(tempMin)}</span>
+            <div class="provider-table">
+                <div class="table-header">
+                    <div class="table-header-cell">供应商</div>
+                    <div class="table-header-cell">最高温</div>
+                    <div class="table-header-cell">最低温</div>
+                    <div class="table-header-cell">天气</div>
+                    <div class="table-header-cell">操作</div>
                 </div>
+                ${Object.values(day.providers).map(p => `
+                    <div class="table-row" onclick="weatherCompare.showDayDetail('${day.date}', '${p.providerId}')">
+                        <div class="provider-cell">
+                            <div class="provider-icon" style="background: ${p.color || '#667eea'};">${p.icon || '☀️'}</div>
+                            <span class="provider-name">${p.providerName}</span>
+                        </div>
+                        <div class="temp-cell">
+                            <span class="temp-high">${formatTemp(p.tempHigh)}</span>
+                        </div>
+                        <div class="temp-cell">
+                            <span class="temp-low">${formatTemp(p.tempLow)}</span>
+                        </div>
+                        <div class="temp-cell">
+                            <span>${p.weatherIcon || '-'} ${p.weatherDesc || '-'}</span>
+                        </div>
+                        <div class="temp-cell">
+                            <button class="detail-btn" onclick="event.stopPropagation(); weatherCompare.showMap('${p.providerId}')">
+                                <i class="fas fa-map-marker-alt"></i> 地图
+                            </button>
+                        </div>
+                    </div>
+                `).join('')}
             </div>
             <div class="expand-toggle">
-                <span>点击查看详情</span>
+                <span>点击展开详情</span>
                 <i class="fas fa-chevron-down"></i>
-            </div>
-            <div class="weather-details">
-                <div class="details-grid">
-                    <div class="detail-item">
-                        <i class="fas fa-thermometer-half"></i>
-                        <span>体感温度:</span>
-                        <span class="value">${formatTemp(apparentMax)} / ${formatTemp(apparentMin)}</span>
-                    </div>
-                    <div class="detail-item">
-                        <i class="fas fa-tint"></i>
-                        <span>降水概率:</span>
-                        <span class="value">${formatPercent(daily.precipitation_probability_max[index])}</span>
-                    </div>
-                    <div class="detail-item">
-                        <i class="fas fa-cloud-rain"></i>
-                        <span>降水量:</span>
-                        <span class="value">${daily.precipitation_sum[index] || 0} mm</span>
-                    </div>
-                    <div class="detail-item">
-                        <i class="fas fa-wind"></i>
-                        <span>风速:</span>
-                        <span class="value">${formatWindSpeed(daily.windspeed_10m_max[index])}</span>
-                    </div>
-                    <div class="detail-item">
-                        <i class="fas fa-sun"></i>
-                        <span>紫外线指数:</span>
-                        <span class="value">${daily.uv_index_max[index] || '--'}</span>
-                    </div>
-                    <div class="detail-item">
-                        <i class="fas fa-sunrise"></i>
-                        <span>日出:</span>
-                        <span class="value">${formatTime(daily.sunrise[index])}</span>
-                    </div>
-                    <div class="detail-item">
-                        <i class="fas fa-sunset"></i>
-                        <span>日落:</span>
-                        <span class="value">${formatTime(daily.sunset[index])}</span>
-                    </div>
-                </div>
             </div>
         `;
 
-        card.addEventListener('click', () => this.toggleCard(card));
-
-        return card;
+        return section;
     }
 
-    /**
-     * 切换卡片展开状态
-     * @param {HTMLElement} card - 卡片元素
-     */
-    toggleCard(card) {
-        const wasExpanded = card.classList.contains('expanded');
-        
-        document.querySelectorAll('.weather-card.expanded').forEach(c => {
-            c.classList.remove('expanded');
-        });
-
-        if (!wasExpanded) {
-            card.classList.add('expanded');
-            this.showCardDetails(card);
+    toggleDay(dateKey) {
+        const section = document.querySelector(`.day-section[data-date="${dateKey}"]`);
+        if (section) {
+            section.classList.toggle('expanded');
         }
     }
 
-    /**
-     * 显示卡片详细信息（弹窗）
-     * @param {HTMLElement} card - 卡片元素
-     */
-    showCardDetails(card) {
-        const cityId = card.dataset.city;
-        const index = parseInt(card.dataset.index);
-        const city = this.cities[cityId];
-        const data = this.weatherData[cityId];
-        
-        if (!data || !city) return;
+    showDayDetail(dateKey, providerId) {
+        const day = this.weatherData.days[dateKey];
+        const provider = day?.providers[providerId];
 
-        const daily = data.daily;
-        const dateStr = daily.time[index];
-        const dateInfo = formatDate(dateStr);
-        const weatherInfo = getWeatherInfo(daily.weathercode[index]);
+        if (!provider) return;
+
+        const dateInfo = formatDate(dateKey);
+        const city = this.cities[this.currentCity];
 
         const modalHeader = document.getElementById('modal-header');
         const modalBody = document.getElementById('modal-body');
 
         modalHeader.innerHTML = `
-            <div style="font-size: 3rem; margin-bottom: 10px;">${weatherInfo.icon}</div>
-            <h2 style="font-size: 1.5rem; margin-bottom: 5px;">${city.name}</h2>
-            <p style="color: var(--text-secondary);">${dateInfo.full} ${dateInfo.weekday}</p>
-            <p style="font-size: 1.2rem; color: #667eea; margin-top: 10px;">${weatherInfo.desc}</p>
-            <div style="font-size: 2rem; font-weight: 700; margin-top: 10px;">
-                <span style="color: #e53e3e;">${formatTemp(daily.temperature_2m_max[index])}</span>
-                <span style="color: var(--text-secondary);"> / </span>
-                <span style="color: #3182ce;">${formatTemp(daily.temperature_2m_min[index])}</span>
+            <div class="modal-city-title">${city.name}</div>
+            <div class="modal-date-title">${dateInfo.full} ${dateInfo.weekday}</div>
+            <div class="modal-weather-summary">
+                <div class="summary-item">
+                    <div class="summary-icon">${provider.weatherIcon || '☀️'}</div>
+                    <div class="summary-desc">${provider.weatherDesc || '暂无数据'}</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-temp">
+                        <span class="summary-temp-high">${formatTemp(provider.tempHigh)}</span>
+                        <span> / </span>
+                        <span class="summary-temp-low">${formatTemp(provider.tempLow)}</span>
+                    </div>
+                </div>
             </div>
         `;
 
         modalBody.innerHTML = `
-                <div class="details-grid">
-                    <div class="detail-item">
-                        <i class="fas fa-thermometer-half"></i>
-                        <span>体感温度:</span>
-                        <span class="value">${formatTemp(daily.apparent_temperature_max[index])} / ${formatTemp(daily.apparent_temperature_min[index])}</span>
+            <div class="detail-grid">
+                <div class="detail-card" style="border-top: 4px solid ${provider.color};">
+                    <div class="provider-icon" style="background: ${provider.color};">${provider.icon || '☀️'}</div>
+                    <div class="provider-name">${provider.providerName}</div>
+                    <div class="detail-row">
+                        <span class="detail-label">体感温度</span>
+                        <span class="detail-value">${formatTemp(provider.tempApparentHigh)} / ${formatTemp(provider.tempApparentLow)}</span>
                     </div>
-                    <div class="detail-item">
-                        <i class="fas fa-tint"></i>
-                        <span>降水概率:</span>
-                        <span class="value">${formatPercent(daily.precipitation_probability_max[index])}</span>
+                    <div class="detail-row">
+                        <span class="detail-label">降水概率</span>
+                        <span class="detail-value">${provider.precipitationProb !== undefined ? provider.precipitationProb + '%' : '--'}</span>
                     </div>
-                    <div class="detail-item">
-                        <i class="fas fa-cloud-rain"></i>
-                        <span>降水量:</span>
-                        <span class="value">${daily.precipitation_sum[index] || 0} mm</span>
+                    <div class="detail-row">
+                        <span class="detail-label">降水量</span>
+                        <span class="detail-value">${provider.precipitation !== undefined ? provider.precipitation + 'mm' : '--'}</span>
                     </div>
-                    <div class="detail-item">
-                        <i class="fas fa-wind"></i>
-                        <span>风速:</span>
-                        <span class="value">${formatWindSpeed(daily.windspeed_10m_max[index])}</span>
+                    <div class="detail-row">
+                        <span class="detail-label">风速</span>
+                        <span class="detail-value">${provider.windSpeed !== undefined ? provider.windSpeed + 'km/h' : '--'}</span>
                     </div>
-                    <div class="detail-item">
-                        <i class="fas fa-sun"></i>
-                        <span>紫外线指数:</span>
-                        <span class="value">${this.getUVLevel(daily.uv_index_max[index])}</span>
+                    <div class="detail-row">
+                        <span class="detail-label">紫外线指数</span>
+                        <span class="detail-value">${provider.uvIndex !== undefined ? provider.uvIndex : '--'}</span>
                     </div>
-                    <div class="detail-item">
-                        <i class="fas fa-sunrise"></i>
-                        <span>日出时间:</span>
-                        <span class="value">${formatTime(daily.sunrise[index])}</span>
+                    <div class="detail-row">
+                        <span class="detail-label">日出</span>
+                        <span class="detail-value">${provider.sunrise ? this.formatTime(provider.sunrise) : '--'}</span>
                     </div>
-                    <div class="detail-item">
-                        <i class="fas fa-sunset"></i>
-                        <span>日落时间:</span>
-                        <span class="value">${formatTime(daily.sunset[index])}</span>
+                    <div class="detail-row">
+                        <span class="detail-label">日落</span>
+                        <span class="detail-value">${provider.sunset ? this.formatTime(provider.sunset) : '--'}</span>
                     </div>
                 </div>
-            <div style="margin-top: 20px; padding: 15px; background: #f8fafc; border-radius: 8px;">
-                <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 8px;">
-                    <i class="fas fa-info-circle"></i> 紫外线指数说明
-                </p>
-                <div style="display: flex; gap: 5px; flex-wrap: wrap;">
-                    <span style="padding: 4px 8px; background: #48bb78; color: white; border-radius: 4px; font-size: 0.75rem;">低 0-2</span>
-                    <span style="padding: 4px 8px; background: #ecc94b; color: #744210; border-radius: 4px; font-size: 0.75rem;">中 3-5</span>
-                    <span style="padding: 4px 8px; background: #ed8936; color: white; border-radius: 4px; font-size: 0.75rem;">高 6-7</span>
-                    <span style="padding: 4px 8px; background: #e53e3e; color: white; border-radius: 4px; font-size: 0.75rem;">甚高 8-10</span>
-                    <span style="padding: 4px 8px; background: #805ad5; color: white; border-radius: 4px; font-size: 0.75rem;">极高 11+</span>
-                </div>
+            </div>
+            <div style="margin-top: 20px; text-align: center;">
+                <button class="refresh-btn" onclick="weatherCompare.showMap('${providerId}')" style="width: auto; padding: 12px 24px; border-radius: 8px;">
+                    <i class="fas fa-map-marker-alt" style="margin-right: 8px;"></i>
+                    查看地图位置
+                </button>
             </div>
         `;
 
         document.getElementById('detail-modal').classList.add('active');
     }
 
-    /**
-     * 获取紫外线等级描述
-     * @param {number} uv - 紫外线指数
-     * @returns {string} 等级描述
-     */
-    getUVLevel(uv) {
-        if (uv === null || uv === undefined) return '--';
-        const level = Math.round(uv);
-        if (level <= 2) return `${level} (低)`;
-        if (level <= 5) return `${level} (中)`;
-        if (level <= 7) return `${level} (高)`;
-        if (level <= 10) return `${level} (甚高)`;
-        return `${level} (极高)`;
+    formatTime(timeStr) {
+        if (!timeStr) return '--';
+        if (typeof timeStr === 'string' && timeStr.includes('T')) {
+            return timeStr.substring(0, 5);
+        }
+        return timeStr;
     }
 
-    /**
-     * 关闭弹窗
-     */
+    showMap(providerId) {
+        const city = this.cities[this.currentCity];
+        if (!city) return;
+
+        if (weatherMap) {
+            weatherMap.open(city);
+        }
+    }
+
     closeModal() {
         document.getElementById('detail-modal').classList.remove('active');
-        document.querySelectorAll('.weather-card.expanded').forEach(c => {
-            c.classList.remove('expanded');
-        });
     }
 
-    /**
-     * 显示加载状态
-     * @param {string} cityId - 城市ID
-     */
-    showLoading(cityId) {
-        const loading = document.getElementById(`${cityId}-loading`);
-        const weatherGrid = document.getElementById(`${cityId}-weather`);
-        const errorDiv = document.getElementById(`${cityId}-error`);
-        
-        if (loading) loading.style.display = 'flex';
-        if (weatherGrid) weatherGrid.innerHTML = '';
-        if (errorDiv) errorDiv.style.display = 'none';
+    closeMapModal() {
+        document.getElementById('map-modal').classList.remove('active');
     }
 
-    /**
-     * 隐藏加载状态
-     * @param {string} cityId - 城市ID
-     */
-    hideLoading(cityId) {
-        const loading = document.getElementById(`${cityId}-loading`);
-        if (loading) loading.style.display = 'none';
+    updateCityHeader(city) {
+        const nameEl = document.getElementById('current-city-name');
+        const coordsEl = document.getElementById('current-city-coords');
+
+        if (nameEl) nameEl.textContent = city.name;
+        if (coordsEl) coordsEl.textContent = `${city.latitude}°N, ${city.longitude}°E`;
     }
 
-    /**
-     * 显示错误信息
-     * @param {string} cityId - 城市ID
-     * @param {string} message - 错误消息
-     */
-    showError(cityId, message) {
-        const errorDiv = document.getElementById(`${cityId}-error`);
-        const weatherGrid = document.getElementById(`${cityId}-weather`);
-        const loading = document.getElementById(`${cityId}-loading`);
-        
-        if (errorDiv) {
-            errorDiv.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${message}`;
-            errorDiv.style.display = 'block';
+    showLoading(show) {
+        const loading = document.getElementById('loading');
+        const content = document.getElementById('weather-content');
+        const refreshBtn = document.getElementById('refresh-btn');
+
+        if (loading) {
+            loading.classList.toggle('active', show);
         }
-        if (weatherGrid) weatherGrid.innerHTML = '';
-        if (loading) loading.style.display = 'none';
-    }
 
-    /**
-     * 更新时间戳
-     * @param {string} cityId - 城市ID
-     */
-    updateLastUpdated(cityId) {
-        const updatedDiv = document.getElementById(`${cityId}-updated`);
-        if (updatedDiv) {
-            const now = new Date();
-            updatedDiv.innerHTML = `<i class="fas fa-clock"></i> ${now.toLocaleTimeString('zh-CN')} 更新`;
+        if (content) {
+            content.style.opacity = show ? '0.5' : '1';
+            content.style.pointerEvents = show ? 'none' : 'auto';
+        }
+
+        if (refreshBtn) {
+            refreshBtn.classList.toggle('loading', show);
         }
     }
 
-    /**
-     * 更新全局刷新时间
-     */
+    showError(message) {
+        const errorEl = document.getElementById('error-message');
+        const textEl = document.getElementById('error-text');
+        const content = document.getElementById('weather-content');
+
+        if (errorEl) {
+            errorEl.style.display = 'flex';
+            if (textEl) textEl.textContent = message;
+        }
+
+        if (content) content.innerHTML = '';
+    }
+
+    hideError() {
+        const errorEl = document.getElementById('error-message');
+        if (errorEl) errorEl.style.display = 'none';
+    }
+
+    refresh() {
+        this.weatherData = {};
+        this.loadWeatherData();
+    }
+
     updateLastRefreshTime() {
-        const globalUpdated = document.getElementById('global-updated');
-        if (globalUpdated) {
+        const updateEl = document.getElementById('last-updated');
+        if (updateEl) {
             const now = new Date();
-            globalUpdated.textContent = `最后更新: ${now.toLocaleString('zh-CN')}`;
+            updateEl.textContent = `最后更新: ${now.toLocaleString('zh-CN')}`;
         }
     }
 }
 
-// 页面加载完成后初始化应用
+// 初始化应用
+let weatherCompare = null;
+
 document.addEventListener('DOMContentLoaded', () => {
-    new WeatherComparison();
+    weatherCompare = new WeatherCompare();
 });
