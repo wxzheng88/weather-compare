@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="天气预报对比工具 - 对比安达市和甘南县未来5天天气预报">
+    <meta name="keywords" weather, forecast, comparison, China, Open-Meteo>
+    <title>天气预报对比 | 安达市 vs 甘南县</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <header class="main-header">
+            <div class="header-content">
+                <h1 class="app-title">
+                    <i class="fas fa-cloud-sun"></i>
+                    天气预报对比
+                </h1>
+                <p class="app-subtitle">对比安达市和甘南县未来5天天气情况</p>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div class="weather-comparison">
+                <!-- 安达市 -->
+                <section class="city-section" id="city-anda">
+                    <div class="city-header">
+                        <div class="city-info">
+                            <i class="fas fa-city"></i>
+                            <h2>安达市</h2>
+                            <span class="province">黑龙江省</span>
+                        </div>
+                        <div class="last-updated" id="anda-updated"></div>
+                    </div>
+                    <div class="weather-grid" id="anda-weather">
+                        <!-- 天气卡片将通过JS动态插入 -->
+                    </div>
+                    <div class="loading-skeleton" id="anda-loading">
+                        <div class="skeleton-card"></div>
+                        <div class="skeleton-card"></div>
+                        <div class="skeleton-card"></div>
+                        <div class="skeleton-card"></div>
+                        <div class="skeleton-card"></div>
+                    </div>
+                    <div class="error-message" id="anda-error" style="display: none;"></div>
+                </section>
+
+                <!-- 分隔线 -->
+                <div class="divider">
+                    <span class="divider-text">VS</span>
+                </div>
+
+                <!-- 甘南县 -->
+                <section class="city-section" id="city-gannan">
+                    <div class="city-header">
+                        <div class="city-info">
+                            <i class="fas fa-building"></i>
+                            <h2>甘南县</h2>
+                            <span class="province">黑龙江省</span>
+                        </div>
+                        <div class="last-updated" id="gannan-updated"></div>
+                    </div>
+                    <div class="weather-grid" id="gannan-weather">
+                        <!-- 天气卡片将通过JS动态插入 -->
+                    </div>
+                    <div class="loading-skeleton" id="gannan-loading">
+                        <div class="skeleton-card"></div>
+                        <div class="skeleton-card"></div>
+                        <div class="skeleton-card"></div>
+                        <div class="skeleton-card"></div>
+                        <div class="skeleton-card"></div>
+                    </div>
+                    <div class="error-message" id="gannan-error" style="display: none;"></div>
+                </section>
+            </div>
+        </main>
+
+        <footer class="main-footer">
+            <div class="footer-content">
+                <p>
+                    <i class="fas fa-database"></i>
+                    数据来源：
+                    <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a>
+                    &nbsp;|&nbsp;
+                    <i class="fas fa-sync-alt" id="refresh-btn" title="刷新数据"></i>
+                </p>
+                <p class="update-time" id="global-updated"></p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- 详情弹窗 -->
+    <div class="modal-overlay" id="detail-modal">
+        <div class="modal-content">
+            <button class="modal-close" id="modal-close">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="modal-header" id="modal-header">
+                <!-- 动态内容 -->
+            </div>
+            <div class="modal-body" id="modal-body">
+                <!-- 动态内容 -->
+            </div>
+        </div>
+    </div>
+
+    <script src="cities.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
