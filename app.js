@@ -111,7 +111,7 @@ class WeatherCompare {
     }
 
     async fetchAllProviders(city) {
-        const providerIds = ['openmeteo', 'openweathermap', 'weatherapi', 'qweather'];
+        const providerIds = ['openmeteo', 'openweathermap', 'weatherapi', 'qweather', 'accuweather'];
         const results = {};
 
         const promises = providerIds.map(async (providerId) => {

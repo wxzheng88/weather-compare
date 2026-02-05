@@ -7,7 +7,8 @@
 const API_KEYS = {
     openweathermap: '3116159f12308c8d20f49ef93a789752',
     weatherapi: '245ec6387e80426dac120202260502',
-    qweather: 'f4658096a13e4b078317d0580a5bb4bc'
+    qweather: 'f4658096a13e4b078317d0580a5bb4bc',
+    accuweather: 'hFgGzL4AykO2BkXkB8Ck8G5O9lB8Ql2Z'  // AccuWeather Key
 };
 
 // 供应商配置
@@ -51,7 +52,19 @@ const PROVIDERS = {
         icon: '🌪️',
         color: '#00b894',
         baseUrl: 'https://devapi.qweather.com/v7/weather/3d',
-        requiresKey: false,  // 免费版无需Key
+        requiresKey: true,
+        apiKey: API_KEYS.qweather,
+        free: true
+    },
+    accuweather: {
+        id: 'accuweather',
+        name: 'AccuWeather',
+        nameCn: 'AccuWeather',
+        icon: '🌡️',
+        color: '#e84351',
+        baseUrl: 'http://dataservice.accuweather.com/forecasts/v1/daily/5day',
+        requiresKey: true,
+        apiKey: API_KEYS.accuweather,
         free: true
     }
 };
@@ -156,43 +169,37 @@ const WEATHER_CODES = {
         1279: { desc: '雷阵雨+小雪', icon: '⛈️' },
         1282: { desc: '雷阵雨+大雪', icon: '⛈️' }
     },
-    qweather: {
-        0: { desc: '晴', icon: '☀️' },
-        1: { desc: '多云', icon: '⛅' },
-        2: { desc: '阴', icon: '☁️' },
-        3: { desc: '阵雨', icon: '🌦️' },
-        4: { desc: '雷阵雨', icon: '⛈️' },
-        5: { desc: '雷阵雨加冰雹', icon: '⛈️' },
-        6: { desc: '雨夹雪', icon: '🌧️' },
-        7: { desc: '小雨', icon: '🌧️' },
-        8: { desc: '中雨', icon: '🌧️' },
-        9: { desc: '大雨', icon: '🌧️' },
-        10: { desc: '暴雨', icon: '🌧️' },
-        11: { desc: '大暴雨', icon: '🌧️' },
-        12: { desc: '特大暴雨', icon: '🌧️' },
-        13: { desc: '小雪', icon: '❄️' },
-        14: { desc: '中雪', icon: '❄️' },
-        15: { desc: '大雪', icon: '❄️' },
-        16: { desc: '暴雪', icon: '❄️' },
-        17: { desc: '大暴雪', icon: '❄️' },
-        18: { desc: '特大暴雪', icon: '❄️' },
-        19: { desc: '雾', icon: '🌫️' },
-        20: { desc: '冻雨', icon: '🌧️' },
-        21: { desc: '沙尘暴', icon: '🌪️' },
-        22: { desc: '轻度霾', icon: '🌫️' },
-        23: { desc: '中度霾', icon: '🌫️' },
-        24: { desc: '重度霾', icon: '🌫️' },
-        25: { desc: '严重霾', icon: '🌫️' },
-        26: { desc: '大雾', icon: '🌫️' },
-        27: { desc: '强浓雾', icon: '🌫️' },
-        28: { desc: '特强浓雾', icon: '🌫️' },
+    accuweather: {
+        0: { desc: '晴朗', icon: '☀️' },
+        1: { desc: '晴朗', icon: '☀️' },
+        2: { desc: '大部晴朗', icon: '🌤️' },
+        3: { desc: '多云', icon: '⛅' },
+        4: { desc: '间晴', icon: '🌤️' },
+        5: { desc: '间多云', icon: '⛅' },
+        6: { desc: '多云间阴', icon: '☁️' },
+        7: { desc: '阴', icon: '☁️' },
+        8: { desc: '阴', icon: '☁️' },
+        11: { desc: '雾', icon: '🌫️' },
+        12: { desc: '阵雨', icon: '🌦️' },
+        13: { desc: '阵雨', icon: '🌦️' },
+        14: { desc: '雷阵雨', icon: '⛈️' },
+        15: { desc: '雷阵雨', icon: '⛈️' },
+        16: { desc: '雷阵雨', icon: '⛈️' },
+        17: { desc: '雷阵雨', icon: '⛈️' },
+        18: { desc: '大雨', icon: '🌧️' },
+        19: { desc: '冻雨', icon: '🌧️' },
+        20: { desc: '雨夹雪', icon: '🌧️' },
+        21: { desc: '小雪', icon: '❄️' },
+        22: { desc: '中雪', icon: '❄️' },
+        23: { desc: '大雪', icon: '❄️' },
+        24: { desc: '冻雪', icon: '❄️' },
+        25: { desc: '阵雪', icon: '🌨️' },
+        26: { desc: '小阵雪', icon: '🌨️' },
+        27: { desc: '中阵雪', icon: '🌨️' },
+        28: { desc: '大阵雪', icon: '🌨️' },
         29: { desc: '浮尘', icon: '🌫️' },
         30: { desc: '扬沙', icon: '🌪️' },
-        31: { desc: '强沙尘暴', icon: '🌪️' },
-        32: { desc: '飑', icon: '🌪️' },
-        33: { desc: '龙卷风', icon: '🌪️' },
-        34: { desc: '弱高吹雪', icon: '❄️' },
-        35: { desc: '强高吹雪', icon: '❄️' }
+        31: { desc: '沙尘暴', icon: '🌪️' }
     }
 };
 
@@ -238,7 +245,8 @@ class WeatherAPI {
             openmeteo: () => this.fetchOpenMeteo(city),
             openweathermap: () => this.fetchOpenWeatherMap(city),
             weatherapi: () => this.fetchWeatherAPI(city),
-            qweather: () => this.fetchQWeather(city)
+            qweather: () => this.fetchQWeather(city),
+            accuweather: () => this.fetchAccuWeather(city)
         };
 
         if (methods[this.provider.id]) {
@@ -422,22 +430,38 @@ class WeatherAPI {
         };
     }
 
-    // 和风天气 API (免费版)
+    // 和风天气 API
     async fetchQWeather(city) {
         const params = new URLSearchParams({
             location: `${city.longitude},${city.latitude}`,
-            days: 5
+            key: this.provider.apiKey
         });
 
         const url = `${this.provider.baseUrl}?${params}`;
-        const response = await fetch(url);
         
-        if (!response.ok) {
-            throw new Error(`和风天气API错误: ${response.status}`);
-        }
+        try {
+            const response = await fetch(url, {
+                headers: {
+                    'Accept-Encoding': 'gzip, deflate'
+                }
+            });
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`和风天气API错误: ${response.status} - ${errorText}`);
+            }
 
-        const data = await response.json();
-        return this.normalizeQWeather(data, city);
+            const data = await response.json();
+            
+            if (data.code !== '200') {
+                throw new Error(`和风天气错误: ${data.code} - ${data.message || '未知错误'}`);
+            }
+            
+            return this.normalizeQWeather(data, city);
+        } catch (error) {
+            console.error('和风天气API失败:', error);
+            throw error;
+        }
     }
 
     normalizeQWeather(data, city) {
@@ -467,6 +491,85 @@ class WeatherAPI {
         return {
             provider: 'qweather',
             providerName: '和风天气',
+            city: city.name,
+            forecasts: forecasts
+        };
+    }
+
+    // AccuWeather API
+    async fetchAccuWeather(city) {
+        try {
+            // 先获取location key
+            const locationParams = new URLSearchParams({
+                apikey: this.provider.apiKey,
+                q: `${city.latitude},${city.longitude}`,
+                language: 'zh-cn'
+            });
+            
+            const locationUrl = `http://dataservice.accuweather.com/locations/v1/cities/geoposition/search?${locationParams}`;
+            const locationResponse = await fetch(locationUrl);
+            
+            if (!locationResponse.ok) {
+                throw new Error(`AccuWeather位置查询错误: ${locationResponse.status}`);
+            }
+            
+            const locationData = await locationResponse.json();
+            const locationKey = locationData.Key || locationData.key;
+            
+            if (!locationKey) {
+                throw new Error('无法获取AccuWeather位置Key');
+            }
+            
+            // 获取天气预报
+            const forecastParams = new URLSearchParams({
+                apikey: this.provider.apiKey,
+                language: 'zh-cn',
+                details: 'true',
+                metric: 'true'
+            });
+            
+            const forecastUrl = `${this.provider.baseUrl}/${locationKey}?${forecastParams}`;
+            const forecastResponse = await fetch(forecastUrl);
+            
+            if (!forecastResponse.ok) {
+                throw new Error(`AccuWeather预报查询错误: ${forecastResponse.status}`);
+            }
+            
+            const forecastData = await forecastResponse.json();
+            return this.normalizeAccuWeather(forecastData, city, locationData);
+            
+        } catch (error) {
+            console.error('AccuWeather API失败:', error);
+            throw error;
+        }
+    }
+
+    normalizeAccuWeather(data, city, locationData) {
+        const forecasts = [];
+        const daily = data.DailyForecasts || [];
+
+        for (let i = 0; i < Math.min(daily.length, 5); i++) {
+            const day = daily[i];
+            const weatherInfo = getWeatherDesc('accuweather', day.Day?.Icon || 0);
+            
+            forecasts.push({
+                date: day.Date?.split('T')[0],
+                tempHigh: day.Temperature?.Maximum?.Value,
+                tempLow: day.Temperature?.Minimum?.Value,
+                tempApparentHigh: day.RealFeelTemperature?.Maximum?.Value,
+                tempApparentLow: day.RealFeelTemperature?.Minimum?.Value,
+                precipitation: day.Day?.PrecipitationProbability || 0,
+                precipitationProb: day.Day?.PrecipitationProbability || 0,
+                windSpeed: day.Day?.Wind?.Speed?.Value || 0,
+                weatherCode: day.Day?.Icon || 0,
+                weatherDesc: day.Day?.IconPhrase || weatherInfo.desc,
+                weatherIcon: weatherInfo.icon
+            });
+        }
+
+        return {
+            provider: 'accuweather',
+            providerName: 'AccuWeather',
             city: city.name,
             forecasts: forecasts
         };
