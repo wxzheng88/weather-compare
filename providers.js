@@ -16,7 +16,7 @@ const PROVIDERS = {
         id: 'openmeteo',
         name: 'Open-Meteo',
         nameCn: 'Open-Meteo',
-        icon: '☁️',
+        icon: '🌤️',
         color: '#6c5ce7',
         baseUrl: 'https://api.open-meteo.com/v1/forecast',
         requiresKey: false,
@@ -26,17 +26,17 @@ const PROVIDERS = {
         id: 'openweathermap',
         name: 'OpenWeatherMap',
         nameCn: 'OpenWeatherMap',
-        icon: '🌤️',
+        icon: '🌥️',
         color: '#e17055',
-        baseUrl: 'https://api.openweathermap.org/data/2.5/forecast/daily',
+        baseUrl: 'https://api.openweathermap.org/data/2.5/forecast',
         requiresKey: true,
         apiKey: API_KEYS.openweathermap,
         free: true
     },
     weatherapi: {
         id: 'weatherapi',
-        name: 'WeatherAPI',
-        nameCn: '心知天气',
+        name: 'WeatherAPI.com',
+        nameCn: 'WeatherAPI',
         icon: '🌡️',
         color: '#0984e3',
         baseUrl: 'https://api.weatherapi.com/v1/forecast.json',
@@ -46,7 +46,7 @@ const PROVIDERS = {
     },
     xinzhi: {
         id: 'xinzhi',
-        name: 'SenseTime',
+        name: '心知天气',
         nameCn: '心知天气',
         icon: '🌸',
         color: '#00b894',
@@ -57,41 +57,15 @@ const PROVIDERS = {
     }
 };
 
-// 天气代码映射
+// 天气代码映射 - 统一使用中文描述
 const WEATHER_CODES = {
     openmeteo: {
         0: { desc: '晴朗', icon: '☀️' },
-        1: { desc: '大部分晴朗', icon: '🌤️' },
+        1: { desc: '晴朗', icon: '☀️' },
         2: { desc: '多云', icon: '⛅' },
         3: { desc: '阴天', icon: '☁️' },
         45: { desc: '雾', icon: '🌫️' },
         48: { desc: '雾凇', icon: '🌫️' },
-        51: { desc: '小毛毛雨', icon: '🌧️' },
-        53: { desc: '中毛毛雨', icon: '🌧️' },
-        55: { desc: '大毛毛雨', icon: '🌧️' },
-        61: { desc: '小雨', icon: '🌧️' },
-        63: { desc: '中雨', icon: '🌧️' },
-        65: { desc: '大雨', icon: '🌧️' },
-        71: { desc: '小雪', icon: '❄️' },
-        73: { desc: '中雪', icon: '❄️' },
-        75: { desc: '大雪', icon: '❄️' },
-        77: { desc: '雪粒', icon: '🌨️' },
-        80: { desc: '小阵雨', icon: '🌦️' },
-        81: { desc: '中阵雨', icon: '🌦️' },
-        82: { desc: '大阵雨', icon: '🌦️' },
-        85: { desc: '小阵雪', icon: '🌨️' },
-        86: { desc: '大阵雪', icon: '🌨️' },
-        95: { desc: '雷暴', icon: '⛈️' },
-        96: { desc: '雷暴+小冰雹', icon: '⛈️' },
-        99: { desc: '雷暴+大冰雹', icon: '⛈️' }
-    },
-    openweathermap: {
-        0: { desc: '晴朗', icon: '☀️' },
-        1: { desc: '晴朗', icon: '☀️' },
-        2: { desc: '少云', icon: '🌤️' },
-        3: { desc: '多云', icon: '⛅' },
-        45: { desc: '雾', icon: '🌫️' },
-        48: { desc: '雾', icon: '🌫️' },
         51: { desc: '毛毛雨', icon: '🌧️' },
         53: { desc: '毛毛雨', icon: '🌧️' },
         55: { desc: '毛毛雨', icon: '🌧️' },
@@ -104,24 +78,49 @@ const WEATHER_CODES = {
         77: { desc: '雪粒', icon: '🌨️' },
         80: { desc: '阵雨', icon: '🌦️' },
         81: { desc: '阵雨', icon: '🌦️' },
-        82: { desc: '阵雨', icon: '🌦️' },
-        85: { desc: '阵雪', icon: '🌨️' },
-        86: { desc: '阵雪', icon: '🌨️' },
-        95: { desc: '雷暴', icon: '⛈️' },
-        96: { desc: '雷暴+冰雹', icon: '⛈️' },
-        99: { desc: '雷暴+冰雹', icon: '⛈️' }
+        82: { desc: '强阵雨', icon: '🌦️' },
+        85: { desc: '小阵雪', icon: '🌨️' },
+        86: { desc: '大阵雪', icon: '🌨️' },
+        95: { desc: '雷阵雨', icon: '⛈️' },
+        96: { desc: '雷阵雨+小冰雹', icon: '⛈️' },
+        99: { desc: '雷阵雨+大冰雹', icon: '⛈️' }
+    },
+    openweathermap: {
+        0: { desc: '晴朗', icon: '☀️' },
+        1: { desc: '晴朗', icon: '☀️' },
+        2: { desc: '少云', icon: '🌤️' },
+        3: { desc: '多云', icon: '⛅' },
+        45: { desc: '雾', icon: '🌫️' },
+        48: { desc: '雾凇', icon: '🌫️' },
+        51: { desc: '毛毛雨', icon: '🌧️' },
+        53: { desc: '毛毛雨', icon: '🌧️' },
+        55: { desc: '毛毛雨', icon: '🌧️' },
+        61: { desc: '小雨', icon: '🌧️' },
+        63: { desc: '中雨', icon: '🌧️' },
+        65: { desc: '大雨', icon: '🌧️' },
+        71: { desc: '小雪', icon: '❄️' },
+        73: { desc: '中雪', icon: '❄️' },
+        75: { desc: '大雪', icon: '❄️' },
+        77: { desc: '雪粒', icon: '🌨️' },
+        80: { desc: '阵雨', icon: '🌦️' },
+        81: { desc: '阵雨', icon: '🌦️' },
+        82: { desc: '强阵雨', icon: '🌦️' },
+        85: { desc: '小阵雪', icon: '🌨️' },
+        86: { desc: '大阵雪', icon: '🌨️' },
+        95: { desc: '雷阵雨', icon: '⛈️' },
+        96: { desc: '雷阵雨+冰雹', icon: '⛈️' },
+        99: { desc: '雷阵雨+大冰雹', icon: '⛈️' }
     },
     weatherapi: {
         1000: { desc: '晴朗', icon: '☀️' },
-        1003: { desc: '少云', icon: '🌤️' },
+        1003: { desc: '晴间多云', icon: '🌤️' },
         1006: { desc: '多云', icon: '⛅' },
         1009: { desc: '阴天', icon: '☁️' },
         1030: { desc: '雾', icon: '🌫️' },
         1063: { desc: '阵雨', icon: '🌦️' },
         1066: { desc: '阵雪', icon: '🌨️' },
         1069: { desc: '雨夹雪', icon: '🌧️' },
-        1072: { desc: '冻毛毛雨', icon: '🌧️' },
-        1087: { desc: '雷暴', icon: '⛈️' },
+        1087: { desc: '雷阵雨', icon: '⛈️' },
         1114: { desc: '吹雪', icon: '❄️' },
         1117: { desc: '暴风雪', icon: '🌨️' },
         1135: { desc: '雾', icon: '🌫️' },
@@ -133,13 +132,11 @@ const WEATHER_CODES = {
         1180: { desc: '阵雨', icon: '🌦️' },
         1183: { desc: '阵雨', icon: '🌦️' },
         1186: { desc: '阵雨', icon: '🌦️' },
-        1189: { desc: '阵雨', icon: '🌦️' },
+        1189: { desc: '大雨', icon: '🌧️' },
         1192: { desc: '大雨', icon: '🌧️' },
         1195: { desc: '大雨', icon: '🌧️' },
-        1198: { desc: '冻雨', icon: '🌧️' },
         1201: { desc: '大雨', icon: '🌧️' },
         1204: { desc: '雨夹雪', icon: '🌧️' },
-        1207: { desc: '雨夹雪', icon: '🌧️' },
         1210: { desc: '小雪', icon: '❄️' },
         1213: { desc: '小雪', icon: '❄️' },
         1216: { desc: '中雪', icon: '❄️' },
@@ -151,15 +148,14 @@ const WEATHER_CODES = {
         1243: { desc: '大雨', icon: '🌧️' },
         1246: { desc: '冻雨', icon: '🌧️' },
         1249: { desc: '雨夹雪', icon: '🌧️' },
-        1252: { desc: '雨夹雪', icon: '🌧️' },
         1255: { desc: '小雪', icon: '❄️' },
         1258: { desc: '中雪', icon: '❄️' },
         1261: { desc: '冻雪', icon: '❄️' },
         1264: { desc: '大雪', icon: '❄️' },
-        1273: { desc: '雷暴+阵雨', icon: '⛈️' },
-        1276: { desc: '雷暴+大雨', icon: '⛈️' },
-        1279: { desc: '雷暴+小雪', icon: '⛈️' },
-        1282: { desc: '雷暴+大雪', icon: '⛈️' }
+        1273: { desc: '雷阵雨+阵雨', icon: '⛈️' },
+        1276: { desc: '雷阵雨+大雨', icon: '⛈️' },
+        1279: { desc: '雷阵雨+小雪', icon: '⛈️' },
+        1282: { desc: '雷阵雨+大雪', icon: '⛈️' }
     },
     xinzhi: {
         0: { desc: '晴', icon: '☀️' },
@@ -167,7 +163,7 @@ const WEATHER_CODES = {
         2: { desc: '阴', icon: '☁️' },
         3: { desc: '阵雨', icon: '🌦️' },
         4: { desc: '雷阵雨', icon: '⛈️' },
-        5: { desc: '雷阵雨并伴有冰雹', icon: '⛈️' },
+        5: { desc: '雷阵雨并冰雹', icon: '⛈️' },
         6: { desc: '雨夹雪', icon: '🌧️' },
         7: { desc: '小雨', icon: '🌧️' },
         8: { desc: '中雨', icon: '🌧️' },
@@ -304,14 +300,14 @@ class WeatherAPI {
         };
     }
 
-    // OpenWeatherMap API (免费版 2.5)
+    // OpenWeatherMap API (免费版 - 使用5天/3小时预报)
     async fetchOpenWeatherMap(city) {
         const params = new URLSearchParams({
             lat: city.latitude,
             lon: city.longitude,
             appid: this.provider.apiKey,
             units: 'metric',
-            cnt: '5'  // 5天预报
+            lang: 'zh_cn'
         });
 
         const url = `${this.provider.baseUrl}?${params}`;
@@ -327,25 +323,42 @@ class WeatherAPI {
 
     normalizeOpenWeatherMap(data, city) {
         const forecasts = [];
-        const daily = data.list || [];  // 2.5 API uses 'list' instead of 'daily'
+        const daily = data.list || [];
 
-        for (let i = 0; i < Math.min(daily.length, 5); i++) {
-            const day = daily[i];
-            const weatherInfo = getWeatherDesc('openweathermap', day.weather?.[0]?.id || 0);
+        // 按天分组数据（OWM返回每3小时一条）
+        const days = {};
+        daily.forEach(item => {
+            const date = item.dt_txt?.split(' ')[0];
+            if (!days[date]) {
+                days[date] = [];
+            }
+            days[date].push(item);
+        });
+
+        // 取每天的数据
+        Object.keys(days).slice(0, 5).forEach((date, index) => {
+            const dayItems = days[date];
+            const temps = dayItems.map(item => item.main?.temp_max || 0);
+            const tempsMin = dayItems.map(item => item.main?.temp_min || 0);
+            const pops = dayItems.map(item => item.pop || 0);
+            const weather = dayItems[0];
+
+            const weatherInfo = getWeatherDesc('openweathermap', weather?.weather?.[0]?.id || 0);
+
             forecasts.push({
-                date: day.dt_txt?.split(' ')[0] || new Date(day.dt * 1000).toISOString().split('T')[0],
-                tempHigh: day.main?.temp_max,
-                tempLow: day.main?.temp_min,
-                tempApparentHigh: day.main?.feels_like,
-                tempApparentLow: day.main?.feels_like,
-                precipitation: day.rain?.['3h'] || 0,
-                precipitationProb: day.pop ? day.pop * 100 : 0,
-                windSpeed: day.wind?.speed || 0,
-                weatherCode: day.weather?.[0]?.id || 0,
-                weatherDesc: day.weather?.[0]?.description || weatherInfo.desc,
+                date: date,
+                tempHigh: Math.max(...temps),
+                tempLow: Math.min(...tempsMin),
+                tempApparentHigh: weather?.main?.feels_like,
+                tempApparentLow: weather?.main?.feels_like,
+                precipitation: weather?.rain?.['3h'] || 0,
+                precipitationProb: Math.max(...pops) * 100,
+                windSpeed: weather?.wind?.speed || 0,
+                weatherCode: weather?.weather?.[0]?.id || 0,
+                weatherDesc: weather?.weather?.[0]?.description || weatherInfo.desc,
                 weatherIcon: weatherInfo.icon
             });
-        }
+        });
 
         return {
             provider: 'openweathermap',
@@ -411,9 +424,12 @@ class WeatherAPI {
 
     // 心知天气 API
     async fetchXinZhi(city) {
+        // 心知天气支持城市名称，尝试使用"城市名,省份"格式
+        const location = city.province ? `${city.name},${city.province}` : city.name;
+        
         const params = new URLSearchParams({
             key: this.provider.apiKey,
-            location: city.name,  // 使用城市名称
+            location: location,
             language: 'zh-Hans',
             unit: 'c'
         });
@@ -422,6 +438,24 @@ class WeatherAPI {
         const response = await fetch(url);
         
         if (!response.ok) {
+            // 如果403，尝试只用城市名称
+            if (response.status === 403) {
+                const fallbackParams = new URLSearchParams({
+                    key: this.provider.apiKey,
+                    location: city.name,
+                    language: 'zh-Hans',
+                    unit: 'c'
+                });
+                const fallbackUrl = `${this.provider.baseUrl}?${fallbackParams}`;
+                const fallbackResponse = await fetch(fallbackUrl);
+                
+                if (!fallbackResponse.ok) {
+                    throw new Error(`心知天气API错误: ${fallbackResponse.status}`);
+                }
+                
+                const fallbackData = await fallbackResponse.json();
+                return this.normalizeXinZhi(fallbackData, city);
+            }
             throw new Error(`心知天气API错误: ${response.status}`);
         }
 
