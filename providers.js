@@ -7,7 +7,7 @@
 const API_KEYS = {
     openweathermap: '3116159f12308c8d20f49ef93a789752',
     weatherapi: '245ec6387e80426dac120202260502',
-    qweather: ''  // 和风天气Key（可留空使用免费版）
+    qweather: 'f4658096a13e4b078317d0580a5bb4bc'
 };
 
 // 供应商配置
