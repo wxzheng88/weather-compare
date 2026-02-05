@@ -7,7 +7,7 @@
 const API_KEYS = {
     openweathermap: '3116159f12308c8d20f49ef93a789752',
     weatherapi: '245ec6387e80426dac120202260502',
-    xinzhi: 'Sgeae0NCRpyV1h32i'
+    qweather: ''  // 和风天气Key（可留空使用免费版）
 };
 
 // 供应商配置
@@ -44,15 +44,14 @@ const PROVIDERS = {
         apiKey: API_KEYS.weatherapi,
         free: true
     },
-    xinzhi: {
-        id: 'xinzhi',
-        name: '心知天气',
-        nameCn: '心知天气',
-        icon: '🌸',
+    qweather: {
+        id: 'qweather',
+        name: '和风天气',
+        nameCn: '和风天气',
+        icon: '🌪️',
         color: '#00b894',
-        baseUrl: 'https://api.seniverse.com/v3/weather/daily.json',
-        requiresKey: true,
-        apiKey: API_KEYS.xinzhi,
+        baseUrl: 'https://devapi.qweather.com/v7/weather/3d',
+        requiresKey: false,  // 免费版无需Key
         free: true
     }
 };
@@ -157,13 +156,13 @@ const WEATHER_CODES = {
         1279: { desc: '雷阵雨+小雪', icon: '⛈️' },
         1282: { desc: '雷阵雨+大雪', icon: '⛈️' }
     },
-    xinzhi: {
+    qweather: {
         0: { desc: '晴', icon: '☀️' },
         1: { desc: '多云', icon: '⛅' },
         2: { desc: '阴', icon: '☁️' },
         3: { desc: '阵雨', icon: '🌦️' },
         4: { desc: '雷阵雨', icon: '⛈️' },
-        5: { desc: '雷阵雨并冰雹', icon: '⛈️' },
+        5: { desc: '雷阵雨加冰雹', icon: '⛈️' },
         6: { desc: '雨夹雪', icon: '🌧️' },
         7: { desc: '小雨', icon: '🌧️' },
         8: { desc: '中雨', icon: '🌧️' },
@@ -180,19 +179,20 @@ const WEATHER_CODES = {
         19: { desc: '雾', icon: '🌫️' },
         20: { desc: '冻雨', icon: '🌧️' },
         21: { desc: '沙尘暴', icon: '🌪️' },
-        22: { desc: '小到中雨', icon: '🌧️' },
-        23: { desc: '中到大雨', icon: '🌧️' },
-        24: { desc: '大到暴雨', icon: '🌧️' },
-        25: { desc: '暴雨到大暴雨', icon: '🌧️' },
-        26: { desc: '大暴雨到特大暴雨', icon: '🌧️' },
-        27: { desc: '小到中雪', icon: '❄️' },
-        28: { desc: '中到大雪', icon: '❄️' },
-        29: { desc: '大到暴雪', icon: '❄️' },
-        30: { desc: '暴雪到大暴雪', icon: '❄️' },
-        31: { desc: '大暴雪到特大暴雪', icon: '❄️' },
-        32: { desc: '浮尘', icon: '🌫️' },
-        33: { desc: '扬沙', icon: '🌪️' },
-        34: { desc: '沙尘暴', icon: '🌪️' }
+        22: { desc: '轻度霾', icon: '🌫️' },
+        23: { desc: '中度霾', icon: '🌫️' },
+        24: { desc: '重度霾', icon: '🌫️' },
+        25: { desc: '严重霾', icon: '🌫️' },
+        26: { desc: '大雾', icon: '🌫️' },
+        27: { desc: '强浓雾', icon: '🌫️' },
+        28: { desc: '特强浓雾', icon: '🌫️' },
+        29: { desc: '浮尘', icon: '🌫️' },
+        30: { desc: '扬沙', icon: '🌪️' },
+        31: { desc: '强沙尘暴', icon: '🌪️' },
+        32: { desc: '飑', icon: '🌪️' },
+        33: { desc: '龙卷风', icon: '🌪️' },
+        34: { desc: '弱高吹雪', icon: '❄️' },
+        35: { desc: '强高吹雪', icon: '❄️' }
     }
 };
 
@@ -238,7 +238,7 @@ class WeatherAPI {
             openmeteo: () => this.fetchOpenMeteo(city),
             openweathermap: () => this.fetchOpenWeatherMap(city),
             weatherapi: () => this.fetchWeatherAPI(city),
-            xinzhi: () => this.fetchXinZhi(city)
+            qweather: () => this.fetchQWeather(city)
         };
 
         if (methods[this.provider.id]) {
@@ -422,72 +422,51 @@ class WeatherAPI {
         };
     }
 
-    // 心知天气 API
-    async fetchXinZhi(city) {
-        // 心知天气支持城市名称，尝试使用"城市名,省份"格式
-        const location = city.province ? `${city.name},${city.province}` : city.name;
-        
+    // 和风天气 API (免费版)
+    async fetchQWeather(city) {
         const params = new URLSearchParams({
-            key: this.provider.apiKey,
-            location: location,
-            language: 'zh-Hans',
-            unit: 'c'
+            location: `${city.longitude},${city.latitude}`,
+            days: 5
         });
 
         const url = `${this.provider.baseUrl}?${params}`;
         const response = await fetch(url);
         
         if (!response.ok) {
-            // 如果403，尝试只用城市名称
-            if (response.status === 403) {
-                const fallbackParams = new URLSearchParams({
-                    key: this.provider.apiKey,
-                    location: city.name,
-                    language: 'zh-Hans',
-                    unit: 'c'
-                });
-                const fallbackUrl = `${this.provider.baseUrl}?${fallbackParams}`;
-                const fallbackResponse = await fetch(fallbackUrl);
-                
-                if (!fallbackResponse.ok) {
-                    throw new Error(`心知天气API错误: ${fallbackResponse.status}`);
-                }
-                
-                const fallbackData = await fallbackResponse.json();
-                return this.normalizeXinZhi(fallbackData, city);
-            }
-            throw new Error(`心知天气API错误: ${response.status}`);
+            throw new Error(`和风天气API错误: ${response.status}`);
         }
 
         const data = await response.json();
-        return this.normalizeXinZhi(data, city);
+        return this.normalizeQWeather(data, city);
     }
 
-    normalizeXinZhi(data, city) {
+    normalizeQWeather(data, city) {
         const forecasts = [];
-        const daily = data.results?.[0]?.daily || [];
+        const daily = data.daily || [];
 
         for (let i = 0; i < Math.min(daily.length, 5); i++) {
             const day = daily[i];
-            const weatherInfo = getWeatherDesc('xinzhi', parseInt(day.code_day) || 0);
+            const weatherInfo = getWeatherDesc('qweather', day.weatherCodeDay || 0);
             forecasts.push({
                 date: day.date,
-                tempHigh: parseFloat(day.high),
-                tempLow: parseFloat(day.low),
-                precipitation: parseFloat(day.precipitation) || 0,
-                precipitationProb: parseInt(day.precipitation) > 0 ? 50 : 0,
-                windSpeed: parseInt(day.wind_speed?.replace('km/h', '') || 0),
-                sunrise: day.ssr_time,
-                sunset: day.sss_time,
-                weatherCode: parseInt(day.code_day) || 0,
-                weatherDesc: day.text_day,
+                tempHigh: day.tempMax,
+                tempLow: day.tempMin,
+                tempApparentHigh: day.tempMax,
+                tempApparentLow: day.tempMin,
+                precipitation: day.precipitation || 0,
+                precipitationProb: day.pop || 0,
+                windSpeed: day.windSpeedDay || 0,
+                sunrise: day.sunrise,
+                sunset: day.sunset,
+                weatherCode: day.weatherCodeDay || 0,
+                weatherDesc: day.weatherTextDay || weatherInfo.desc,
                 weatherIcon: weatherInfo.icon
             });
         }
 
         return {
-            provider: 'xinzhi',
-            providerName: '心知天气',
+            provider: 'qweather',
+            providerName: '和风天气',
             city: city.name,
             forecasts: forecasts
         };
