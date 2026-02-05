@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API测试</title>
+</head>
+<body>
+    <h1>Open-Meteo API 测试</h1>
+    <pre id="output"></pre>
+
+    <script>
+        async function testAPI() {
+            const cities = [
+                { name: '安达市', lat: 46.39, lon: 125.32 },
+                { name: '甘南县', lat: 47.92, lon: 123.50 }
+            ];
+
+            const output = document.getElementById('output');
+            let results = '';
+
+            for (const city of cities) {
+                const url = `https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=Asia/Shanghai&forecast_days=5`;
+                
+                try {
+                    results += `测试 ${city.name}:\n`;
+                    results += `URL: ${url}\n`;
+                    
+                    const response = await fetch(url);
+                    results += `Status: ${response.status}\n`;
+                    
+                    if (!response.ok) {
+                        const text = await response.text();
+                        results += `Error: ${text}\n`;
+                    } else {
+                        const data = await response.json();
+                        results += `Success! Daily days: ${data.daily.time.length}\n`;
+                        results += `Dates: ${data.daily.time.join(', ')}\n`;
+                    }
+                } catch (error) {
+                    results += `Fetch Error: ${error.message}\n`;
+                }
+                results += '\n---\n';
+            }
+
+            output.textContent = results;
+        }
+
+        testAPI();
+    </script>
+</body>
+</html>

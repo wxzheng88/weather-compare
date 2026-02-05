@@ -121,13 +121,23 @@ class WeatherComparison {
                 forecast_days: 5
             });
 
-            const response = await fetch(`${this.apiBase}?${params}`);
-            
+            const url = `${this.apiBase}?${params}`;
+            console.log(`Fetching weather for ${city.name}:`, url);
+
+            const response = await fetch(url, {
+                method: 'GET',
+                mode: 'cors',
+                cache: 'no-cache'
+            });
+
             if (!response.ok) {
+                const errorText = await response.text();
+                console.error(`API Error for ${city.name}:`, errorText);
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
             const data = await response.json();
+            console.log(`Weather data received for ${city.name}:`, data.daily.time.length, 'days');
             this.weatherData[cityId] = data;
             this.hideLoading(cityId);
             this.renderWeatherCards(cityId, data);
