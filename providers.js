@@ -28,7 +28,7 @@ const PROVIDERS = {
         nameCn: 'OpenWeatherMap',
         icon: '🌤️',
         color: '#e17055',
-        baseUrl: 'https://api.openweathermap.org/data/3.0/onecall',
+        baseUrl: 'https://api.openweathermap.org/data/2.5/forecast/daily',
         requiresKey: true,
         apiKey: API_KEYS.openweathermap,
         free: true
@@ -304,14 +304,14 @@ class WeatherAPI {
         };
     }
 
-    // OpenWeatherMap API
+    // OpenWeatherMap API (免费版 2.5)
     async fetchOpenWeatherMap(city) {
         const params = new URLSearchParams({
             lat: city.latitude,
             lon: city.longitude,
             appid: this.provider.apiKey,
             units: 'metric',
-            exclude: 'minutely,hourly,alerts'
+            cnt: '5'  // 5天预报
         });
 
         const url = `${this.provider.baseUrl}?${params}`;
@@ -327,24 +327,22 @@ class WeatherAPI {
 
     normalizeOpenWeatherMap(data, city) {
         const forecasts = [];
-        const daily = data.daily || [];
+        const daily = data.list || [];  // 2.5 API uses 'list' instead of 'daily'
 
         for (let i = 0; i < Math.min(daily.length, 5); i++) {
-            const weatherInfo = getWeatherDesc('openweathermap', daily[i].weather?.[0]?.id || 0);
+            const day = daily[i];
+            const weatherInfo = getWeatherDesc('openweathermap', day.weather?.[0]?.id || 0);
             forecasts.push({
-                date: new Date(daily[i].dt * 1000).toISOString().split('T')[0],
-                tempHigh: daily[i].temp?.max,
-                tempLow: daily[i].temp?.min,
-                tempApparentHigh: daily[i].feels_like?.day,
-                tempApparentLow: daily[i].feels_like?.night,
-                precipitation: daily[i].rain || 0,
-                precipitationProb: (daily[i].pop || 0) * 100,
-                windSpeed: daily[i].speed,
-                uvIndex: daily[i].uvi,
-                sunrise: new Date(daily[i].sunrise * 1000).toISOString(),
-                sunset: new Date(daily[i].sunset * 1000).toISOString(),
-                weatherCode: daily[i].weather?.[0]?.id || 0,
-                weatherDesc: weatherInfo.desc,
+                date: day.dt_txt?.split(' ')[0] || new Date(day.dt * 1000).toISOString().split('T')[0],
+                tempHigh: day.main?.temp_max,
+                tempLow: day.main?.temp_min,
+                tempApparentHigh: day.main?.feels_like,
+                tempApparentLow: day.main?.feels_like,
+                precipitation: day.rain?.['3h'] || 0,
+                precipitationProb: day.pop ? day.pop * 100 : 0,
+                windSpeed: day.wind?.speed || 0,
+                weatherCode: day.weather?.[0]?.id || 0,
+                weatherDesc: day.weather?.[0]?.description || weatherInfo.desc,
                 weatherIcon: weatherInfo.icon
             });
         }
@@ -415,7 +413,7 @@ class WeatherAPI {
     async fetchXinZhi(city) {
         const params = new URLSearchParams({
             key: this.provider.apiKey,
-            location: `${city.longitude},${city.latitude}`,
+            location: city.name,  // 使用城市名称
             language: 'zh-Hans',
             unit: 'c'
         });

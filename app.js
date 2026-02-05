@@ -39,20 +39,14 @@ class WeatherCompare {
 
     bindModalClose() {
         const modalClose = document.getElementById('modal-close');
-        const mapClose = document.getElementById('map-close');
 
         if (modalClose) {
             modalClose.addEventListener('click', () => this.closeModal());
         }
 
-        if (mapClose) {
-            mapClose.addEventListener('click', () => this.closeMapModal());
-        }
-
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 this.closeModal();
-                this.closeMapModal();
             }
         });
 
@@ -62,15 +56,6 @@ class WeatherCompare {
             modalOverlay.addEventListener('click', (e) => {
                 if (e.target === modalOverlay) {
                     this.closeModal();
-                }
-            });
-        }
-
-        const mapModal = document.getElementById('map-modal');
-        if (mapModal) {
-            mapModal.addEventListener('click', (e) => {
-                if (e.target === mapModal) {
-                    this.closeMapModal();
                 }
             });
         }
@@ -248,8 +233,7 @@ class WeatherCompare {
                     <div class="table-header-cell">供应商</div>
                     <div class="table-header-cell">最高温</div>
                     <div class="table-header-cell">最低温</div>
-                    <div class="table-header-cell">天气</div>
-                    <div class="table-header-cell">操作</div>
+                    <div class="table-header-cell">天气状况</div>
                 </div>
                 ${Object.values(day.providers).map(p => `
                     <div class="table-row" onclick="weatherCompare.showDayDetail('${day.date}', '${p.providerId}')">
@@ -265,11 +249,6 @@ class WeatherCompare {
                         </div>
                         <div class="temp-cell">
                             <span>${p.weatherIcon || '-'} ${p.weatherDesc || '-'}</span>
-                        </div>
-                        <div class="temp-cell">
-                            <button class="detail-btn" onclick="event.stopPropagation(); weatherCompare.showMap('${p.providerId}')">
-                                <i class="fas fa-map-marker-alt"></i> 地图
-                            </button>
                         </div>
                     </div>
                 `).join('')}
@@ -355,12 +334,6 @@ class WeatherCompare {
                     </div>
                 </div>
             </div>
-            <div style="margin-top: 20px; text-align: center;">
-                <button class="refresh-btn" onclick="weatherCompare.showMap('${providerId}')" style="width: auto; padding: 12px 24px; border-radius: 8px;">
-                    <i class="fas fa-map-marker-alt" style="margin-right: 8px;"></i>
-                    查看地图位置
-                </button>
-            </div>
         `;
 
         document.getElementById('detail-modal').classList.add('active');
@@ -374,21 +347,8 @@ class WeatherCompare {
         return timeStr;
     }
 
-    showMap(providerId) {
-        const city = this.cities[this.currentCity];
-        if (!city) return;
-
-        if (weatherMap) {
-            weatherMap.open(city);
-        }
-    }
-
     closeModal() {
         document.getElementById('detail-modal').classList.remove('active');
-    }
-
-    closeMapModal() {
-        document.getElementById('map-modal').classList.remove('active');
     }
 
     updateCityHeader(city) {
