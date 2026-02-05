@@ -6,7 +6,8 @@
 // API Keys配置（用户提供的Key）
 const API_KEYS = {
     openweathermap: '3116159f12308c8d20f49ef93a789752',
-    weatherapi: '245ec6387e80426dac120202260502'
+    weatherapi: '245ec6387e80426dac120202260502',
+    amap: '575be28eae5056df0dca62cfe31571d8'
 };
 
 // 供应商配置
@@ -41,6 +42,18 @@ const PROVIDERS = {
         baseUrl: 'https://api.weatherapi.com/v1/forecast.json',
         requiresKey: true,
         apiKey: API_KEYS.weatherapi,
+        free: true
+    },
+    amap: {
+        id: 'amap',
+        name: '高德天气',
+        nameCn: '高德天气',
+        icon: '🗺️',
+        color: '#3498db',
+        baseUrl: 'https://restapi.amap.com/v3/weather/weatherInfo',
+        geoUrl: 'https://restapi.amap.com/v3/geocode/geo',
+        requiresKey: true,
+        apiKey: API_KEYS.amap,
         free: true
     }
 };
@@ -145,6 +158,40 @@ const WEATHER_CODES = {
         1276: { desc: '雷阵雨+大雨', icon: '⛈️' },
         1279: { desc: '雷阵雨+小雪', icon: '⛈️' },
         1282: { desc: '雷阵雨+大雪', icon: '⛈️' }
+    },
+    amap: {
+        0: { desc: '晴', icon: '☀️' },
+        1: { desc: '多云', icon: '⛅' },
+        2: { desc: '阴', icon: '☁️' },
+        3: { desc: '阵雨', icon: '🌦️' },
+        4: { desc: '雷阵雨', icon: '⛈️' },
+        5: { desc: '雷阵雨加冰雹', icon: '⛈️' },
+        6: { desc: '雨夹雪', icon: '🌧️' },
+        7: { desc: '小雨', icon: '🌧️' },
+        8: { desc: '中雨', icon: '🌧️' },
+        9: { desc: '大雨', icon: '🌧️' },
+        10: { desc: '暴雨', icon: '🌧️' },
+        11: { desc: '大暴雨', icon: '🌧️' },
+        12: { desc: '特大暴雨', icon: '🌧️' },
+        13: { desc: '小雪', icon: '❄️' },
+        14: { desc: '中雪', icon: '❄️' },
+        15: { desc: '大雪', icon: '❄️' },
+        16: { desc: '暴雪', icon: '❄️' },
+        17: { desc: '大暴雪', icon: '❄️' },
+        18: { desc: '特大暴雪', icon: '❄️' },
+        19: { desc: '雾', icon: '🌫️' },
+        20: { desc: '冻雨', icon: '🌧️' },
+        21: { desc: '沙尘暴', icon: '🌪️' },
+        22: { desc: '轻度霾', icon: '🌫️' },
+        23: { desc: '中度霾', icon: '🌫️' },
+        24: { desc: '重度霾', icon: '🌫️' },
+        25: { desc: '严重霾', icon: '🌫️' },
+        26: { desc: '大雾', icon: '🌫️' },
+        27: { desc: '强浓雾', icon: '🌫️' },
+        28: { desc: '特强浓雾', icon: '🌫️' },
+        29: { desc: '浮尘', icon: '🌫️' },
+        30: { desc: '扬沙', icon: '🌪️' },
+        31: { desc: '强沙尘暴', icon: '🌪️' }
     }
 };
 
@@ -189,7 +236,8 @@ class WeatherAPI {
         const methods = {
             openmeteo: () => this.fetchOpenMeteo(city),
             openweathermap: () => this.fetchOpenWeatherMap(city),
-            weatherapi: () => this.fetchWeatherAPI(city)
+            weatherapi: () => this.fetchWeatherAPI(city),
+            amap: () => this.fetchAmapWeather(city)
         };
 
         if (methods[this.provider.id]) {
@@ -367,6 +415,80 @@ class WeatherAPI {
             providerName: 'WeatherAPI',
             city: city.name,
             forecasts: forecasts
+        };
+    }
+
+    // 高德天气 API
+    async fetchAmapWeather(city) {
+        try {
+            // 第一步：通过经纬度获取城市编码
+            const geoUrl = `${this.provider.geoUrl}?key=${this.provider.apiKey}&location=${city.longitude},${city.latitude}`;
+            const geoResponse = await fetch(geoUrl);
+            
+            if (!geoResponse.ok) {
+                throw new Error(`高德地理编码API错误: ${geoResponse.status}`);
+            }
+            
+            const geoData = await geoResponse.json();
+            const adcode = geoData.geocodes?.[0]?.adcode || '';
+            
+            if (!adcode) {
+                throw new Error('无法获取高德城市编码');
+            }
+            
+            console.log(`高德城市编码: ${adcode} (${geoData.geocodes?.[0]?.city || city.name})`);
+            
+            // 第二步：通过城市编码获取天气预报
+            const params = new URLSearchParams({
+                key: this.provider.apiKey,
+                city: adcode,
+                extensions: 'all'
+            });
+            
+            const url = `${this.provider.baseUrl}?${params}`;
+            const response = await fetch(url);
+            
+            if (!response.ok) {
+                throw new Error(`高德天气API错误: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            return this.normalizeAmapWeather(data, city);
+            
+        } catch (error) {
+            console.error('高德天气API失败:', error);
+            throw error;
+        }
+    }
+
+    normalizeAmapWeather(data, city) {
+        const forecasts = [];
+        const casts = data.forecasts?.[0]?.casts || [];
+        
+        casts.forEach(day => {
+            const dayWeather = parseInt(day.dayweather) || 0;
+            const weatherInfo = getWeatherDesc('amap', dayWeather);
+            
+            forecasts.push({
+                date: day.date,
+                tempHigh: parseFloat(day.daytemp),
+                tempLow: parseFloat(day.nighttemp),
+                tempApparentHigh: parseFloat(day.daytemp),
+                tempApparentLow: parseFloat(day.nighttemp),
+                precipitation: 0,
+                precipitationProb: 0,
+                windSpeed: parseInt(day.daypower) * 10 || 0,
+                weatherCode: dayWeather,
+                weatherDesc: day.dayweather || weatherInfo.desc,
+                weatherIcon: weatherInfo.icon
+            });
+        });
+
+        return {
+            provider: 'amap',
+            providerName: '高德天气',
+            city: city.name,
+            forecasts: forecasts.slice(0, 5)
         };
     }
 }
