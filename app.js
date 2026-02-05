@@ -113,7 +113,6 @@ class WeatherComparison {
                     'precipitation_sum',
                     'precipitation_probability_max',
                     'windspeed_10m_max',
-                    'relative_humidity_2m',
                     'uv_index_max',
                     'sunrise',
                     'sunset'
@@ -223,11 +222,6 @@ class WeatherComparison {
                         <span class="value">${formatWindSpeed(daily.windspeed_10m_max[index])}</span>
                     </div>
                     <div class="detail-item">
-                        <i class="fas fa-water"></i>
-                        <span>湿度:</span>
-                        <span class="value">${daily.relative_humidity_2m[index] || '--'}%</span>
-                    </div>
-                    <div class="detail-item">
                         <i class="fas fa-sun"></i>
                         <span>紫外线指数:</span>
                         <span class="value">${daily.uv_index_max[index] || '--'}</span>
@@ -301,48 +295,43 @@ class WeatherComparison {
         `;
 
         modalBody.innerHTML = `
-            <div class="details-grid">
-                <div class="detail-item">
-                    <i class="fas fa-thermometer-half"></i>
-                    <span>体感温度:</span>
-                    <span class="value">${formatTemp(daily.apparent_temperature_max[index])} / ${formatTemp(daily.apparent_temperature_min[index])}</span>
+                <div class="details-grid">
+                    <div class="detail-item">
+                        <i class="fas fa-thermometer-half"></i>
+                        <span>体感温度:</span>
+                        <span class="value">${formatTemp(daily.apparent_temperature_max[index])} / ${formatTemp(daily.apparent_temperature_min[index])}</span>
+                    </div>
+                    <div class="detail-item">
+                        <i class="fas fa-tint"></i>
+                        <span>降水概率:</span>
+                        <span class="value">${formatPercent(daily.precipitation_probability_max[index])}</span>
+                    </div>
+                    <div class="detail-item">
+                        <i class="fas fa-cloud-rain"></i>
+                        <span>降水量:</span>
+                        <span class="value">${daily.precipitation_sum[index] || 0} mm</span>
+                    </div>
+                    <div class="detail-item">
+                        <i class="fas fa-wind"></i>
+                        <span>风速:</span>
+                        <span class="value">${formatWindSpeed(daily.windspeed_10m_max[index])}</span>
+                    </div>
+                    <div class="detail-item">
+                        <i class="fas fa-sun"></i>
+                        <span>紫外线指数:</span>
+                        <span class="value">${this.getUVLevel(daily.uv_index_max[index])}</span>
+                    </div>
+                    <div class="detail-item">
+                        <i class="fas fa-sunrise"></i>
+                        <span>日出时间:</span>
+                        <span class="value">${formatTime(daily.sunrise[index])}</span>
+                    </div>
+                    <div class="detail-item">
+                        <i class="fas fa-sunset"></i>
+                        <span>日落时间:</span>
+                        <span class="value">${formatTime(daily.sunset[index])}</span>
+                    </div>
                 </div>
-                <div class="detail-item">
-                    <i class="fas fa-tint"></i>
-                    <span>降水概率:</span>
-                    <span class="value">${formatPercent(daily.precipitation_probability_max[index])}</span>
-                </div>
-                <div class="detail-item">
-                    <i class="fas fa-cloud-rain"></i>
-                    <span>降水量:</span>
-                    <span class="value">${daily.precipitation_sum[index] || 0} mm</span>
-                </div>
-                <div class="detail-item">
-                    <i class="fas fa-wind"></i>
-                    <span>风速:</span>
-                    <span class="value">${formatWindSpeed(daily.windspeed_10m_max[index])}</span>
-                </div>
-                <div class="detail-item">
-                    <i class="fas fa-water"></i>
-                    <span>湿度:</span>
-                    <span class="value">${daily.relative_humidity_2m[index] || '--'}%</span>
-                </div>
-                <div class="detail-item">
-                    <i class="fas fa-sun"></i>
-                    <span>紫外线指数:</span>
-                    <span class="value">${this.getUVLevel(daily.uv_index_max[index])}</span>
-                </div>
-                <div class="detail-item">
-                    <i class="fas fa-sunrise"></i>
-                    <span>日出时间:</span>
-                    <span class="value">${formatTime(daily.sunrise[index])}</span>
-                </div>
-                <div class="detail-item">
-                    <i class="fas fa-sunset"></i>
-                    <span>日落时间:</span>
-                    <span class="value">${formatTime(daily.sunset[index])}</span>
-                </div>
-            </div>
             <div style="margin-top: 20px; padding: 15px; background: #f8fafc; border-radius: 8px;">
                 <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 8px;">
                     <i class="fas fa-info-circle"></i> 紫外线指数说明
