@@ -51,7 +51,7 @@ const PROVIDERS = {
         icon: '🗺️',
         color: '#3498db',
         baseUrl: 'https://restapi.amap.com/v3/weather/weatherInfo',
-        geoUrl: 'https://restapi.amap.com/v3/geocode/geo',
+        geoUrl: 'https://restapi.amap.com/v3/geocode/regeo',
         requiresKey: true,
         apiKey: API_KEYS.amap,
         free: true
