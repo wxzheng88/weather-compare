@@ -378,7 +378,8 @@ body {
 .day-weather {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 16px;
+    margin-left: auto;
 }
 
 .day-weather-icon {
@@ -408,6 +409,33 @@ body {
     margin-left: 8px;
 }
 
+.day-sun {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.day-sun span {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.day-sun i {
+    font-size: 0.7rem;
+    width: 14px;
+}
+
+.day-sun i.fa-sun {
+    color: #fdcb6e;
+}
+
+.day-sun i.fa-moon {
+    color: #6c5ce7;
+}
+
 /* Provider Table */
 .provider-table {
     display: none;
@@ -422,7 +450,7 @@ body {
 
 .table-header {
     display: grid;
-    grid-template-columns: 100px repeat(4, 1fr);
+    grid-template-columns: 100px repeat(5, 1fr);
     gap: 12px;
     padding: 10px 0;
     border-bottom: 1px solid var(--border-color);
@@ -444,7 +472,7 @@ body {
 
 .table-row {
     display: grid;
-    grid-template-columns: 100px repeat(4, 1fr);
+    grid-template-columns: 100px repeat(5, 1fr);
     gap: 12px;
     padding: 12px 0;
     border-bottom: 1px solid #f0f0f0;
@@ -877,7 +905,7 @@ body {
 
     .table-header,
     .table-row {
-        grid-template-columns: 100px repeat(4, 1fr);
+        grid-template-columns: 100px repeat(5, 1fr);
         font-size: 0.85rem;
     }
 

@@ -392,10 +392,59 @@ class WeatherCompare {
         const low = formatTemp(day.tempLow);
         const sortedProviders = this.getSortedProviders(day.providers);
 
-        // 获取第一个有日出日落数据的供应商
-        const firstProvider = sortedProviders.find(p => p.sunrise && p.sunset);
-        const sunrise = firstProvider ? this.formatSunTime(firstProvider.sunrise) : '--';
-        const sunset = firstProvider ? this.formatSunTime(firstProvider.sunset) : '--';
+        // 检查哪些供应商有日出日落数据
+        const providersWithSun = sortedProviders.filter(p => p.sunrise && p.sunset);
+        const showSunColumn = providersWithSun.length > 0;
+
+        // 如果有供应商有日出日落数据，使用第一个的数据作为默认显示
+        const firstWithSun = providersWithSun[0];
+        const sunrise = firstWithSun ? this.formatSunTime(firstWithSun.sunrise) : '--';
+        const sunset = firstWithSun ? this.formatSunTime(firstWithSun.sunset) : '--';
+
+        // 生成表格列头
+        const headerHtml = `
+            <div class="table-header-cell">供应商</div>
+            <div class="table-header-cell">最高温</div>
+            <div class="table-header-cell">最低温</div>
+            <div class="table-header-cell">天气</div>
+            ${showSunColumn ? '<div class="table-header-cell">日照</div>' : ''}
+        `;
+
+        // 生成表格行
+        const rowsHtml = sortedProviders.map(p => {
+            const sunCell = showSunColumn ? `
+                <div class="sun-cell">
+                    <span class="sun-time"><i class="fas fa-sun"></i> ${p.sunrise ? this.formatSunTime(p.sunrise) : '--'}</span>
+                    <span class="sun-time"><i class="fas fa-moon"></i> ${p.sunset ? this.formatSunTime(p.sunset) : '--'}</span>
+                </div>
+            ` : '';
+
+            // 计算行的grid columns
+            const gridCols = showSunColumn ? '100px repeat(5, 1fr)' : '100px repeat(4, 1fr)';
+
+            return `
+                <div class="table-row" style="grid-template-columns: ${gridCols};" onclick="weatherCompare.showDayDetail('${day.date}', '${p.providerId}')">
+                    <div class="provider-cell">
+                        <div class="provider-icon" style="background: ${p.color};">${p.icon}</div>
+                        <span class="provider-name">${p.providerName}</span>
+                    </div>
+                    <div class="temp-cell">${formatTemp(p.tempHigh)}</div>
+                    <div class="temp-cell">${formatTemp(p.tempLow)}</div>
+                    <div class="weather-cell">
+                        ${this.getWeatherIcon(p.weatherDesc)} ${p.weatherDesc || '--'}
+                    </div>
+                    ${sunCell}
+                </div>
+            `;
+        }).join('');
+
+        // 默认显示行的日照
+        const defaultSunCell = showSunColumn ? `
+            <div class="day-sun">
+                <span><i class="fas fa-sun"></i> ${sunrise}</span>
+                <span><i class="fas fa-moon"></i> ${sunset}</span>
+            </div>
+        ` : '';
 
         section.innerHTML = `
             <div class="day-header" onclick="weatherCompare.toggleDay('${day.date}')">
@@ -410,33 +459,14 @@ class WeatherCompare {
                         <span class="high">${high}</span>
                         <span class="low">/${low}</span>
                     </span>
+                    ${defaultSunCell}
                 </div>
             </div>
             <div class="provider-table">
-                <div class="table-header">
-                    <div class="table-header-cell">供应商</div>
-                    <div class="table-header-cell">最高温</div>
-                    <div class="table-header-cell">最低温</div>
-                    <div class="table-header-cell">天气</div>
-                    <div class="table-header-cell">日出/日落</div>
+                <div class="table-header" style="grid-template-columns: ${showSunColumn ? '100px repeat(5, 1fr)' : '100px repeat(4, 1fr)'};">
+                    ${headerHtml}
                 </div>
-                ${sortedProviders.map(p => `
-                    <div class="table-row" onclick="weatherCompare.showDayDetail('${day.date}', '${p.providerId}')">
-                        <div class="provider-cell">
-                            <div class="provider-icon" style="background: ${p.color};">${p.icon}</div>
-                            <span class="provider-name">${p.providerName}</span>
-                        </div>
-                        <div class="temp-cell">${formatTemp(p.tempHigh)}</div>
-                        <div class="temp-cell">${formatTemp(p.tempLow)}</div>
-                        <div class="weather-cell">
-                            ${this.getWeatherIcon(p.weatherDesc)} ${p.weatherDesc || '--'}
-                        </div>
-                        <div class="sun-cell">
-                            <span class="sun-time"><i class="fas fa-sun"></i> ${p.sunrise ? this.formatSunTime(p.sunrise) : '--'}</span>
-                            <span class="sun-time"><i class="fas fa-moon"></i> ${p.sunset ? this.formatSunTime(p.sunset) : '--'}</span>
-                        </div>
-                    </div>
-                `).join('')}
+                ${rowsHtml}
             </div>
             <div class="expand-toggle" onclick="weatherCompare.toggleDay('${day.date}')">
                 <span>${day.expanded ? '收起' : '查看详情'}</span>
