@@ -325,10 +325,25 @@ class WeatherCompare {
     // 格式化日出日落时间
     formatSunTime(timeStr) {
         if (!timeStr) return '--';
-        if (typeof timeStr === 'string' && timeStr.includes('T')) {
-            // Open-Meteo 格式: 2026-02-06T07:12:00
+        
+        // WeatherAPI格式: "08:56 AM" 或 "06:50 PM"
+        if (timeStr.includes('AM') || timeStr.includes('PM')) {
+            const [time, period] = timeStr.split(' ');
+            const [hours, minutes] = time.split(':').map(Number);
+            let hour24 = hours;
+            if (period === 'PM' && hours !== 12) {
+                hour24 = hours + 12;
+            } else if (period === 'AM' && hours === 12) {
+                hour24 = 0;
+            }
+            return `${String(hour24).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+        }
+        
+        // Open-Meteo格式: "2026-02-06T06:55" 或其他ISO格式
+        if (timeStr.includes('T')) {
             return timeStr.substring(11, 16);
         }
+        
         return timeStr;
     }
 
