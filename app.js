@@ -105,8 +105,8 @@ class WeatherCompare {
                 results[providerId] = { success: true, data };
             } catch (error) {
                 console.error(`${providerId} 获取失败:`, error);
-                results[providerId] = { 
-                    success: false, 
+                results[providerId] = {
+                    success: false,
                     error: error.message,
                     providerName: this.providers[providerId]?.nameCn || providerId
                 };
@@ -160,6 +160,14 @@ class WeatherCompare {
         return merged;
     }
 
+    // 获取排序后的供应商列表（高德排第一）
+    getSortedProviders(providers) {
+        const order = ['amap', 'openmeteo', 'openweathermap', 'weatherapi'];
+        return Object.values(providers).sort((a, b) => {
+            return order.indexOf(a.providerId) - order.indexOf(b.providerId);
+        });
+    }
+
     renderWeather() {
         const container = document.getElementById('weather-content');
         if (!container) return;
@@ -204,6 +212,7 @@ class WeatherCompare {
         const dateInfo = formatDate(day.date);
         const high = formatTemp(day.tempHigh);
         const low = formatTemp(day.tempLow);
+        const sortedProviders = this.getSortedProviders(day.providers);
 
         section.innerHTML = `
             <div class="day-header" onclick="weatherCompare.toggleDay('${day.date}')">
@@ -227,7 +236,7 @@ class WeatherCompare {
                     <div class="table-header-cell">最低温</div>
                     <div class="table-header-cell">天气</div>
                 </div>
-                ${Object.values(day.providers).map(p => `
+                ${sortedProviders.map(p => `
                     <div class="table-row" onclick="weatherCompare.showDayDetail('${day.date}', '${p.providerId}')">
                         <div class="provider-cell">
                             <div class="provider-icon" style="background: ${p.color};">${p.icon}</div>
