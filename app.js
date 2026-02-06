@@ -289,6 +289,8 @@ class WeatherCompare {
                             tempLow: null,
                             weatherIcon: null,
                             weatherDesc: null,
+                            sunrise: null,
+                            sunset: null,
                             providers: {}
                         };
                     }
@@ -301,11 +303,18 @@ class WeatherCompare {
                         ...forecast
                     };
 
+                    // 使用第一个有效数据作为默认显示
                     if (merged.days[dateKey].tempHigh === null) {
                         merged.days[dateKey].tempHigh = forecast.tempHigh;
                         merged.days[dateKey].tempLow = forecast.tempLow;
                         merged.days[dateKey].weatherIcon = forecast.weatherIcon;
                         merged.days[dateKey].weatherDesc = forecast.weatherDesc;
+                    }
+
+                    // 优先使用Open-Meteo的日出日落数据
+                    if (providerId === 'openmeteo' && forecast.sunrise && forecast.sunset) {
+                        merged.days[dateKey].sunrise = forecast.sunrise;
+                        merged.days[dateKey].sunset = forecast.sunset;
                     }
                 });
             }
@@ -407,14 +416,9 @@ class WeatherCompare {
         const low = formatTemp(day.tempLow);
         const sortedProviders = this.getSortedProviders(day.providers);
 
-        // 检查哪些供应商有日出日落数据
-        const providersWithSun = sortedProviders.filter(p => p.sunrise && p.sunset);
-        const showSunColumn = providersWithSun.length > 0;
-
-        // 如果有供应商有日出日落数据，使用第一个的数据作为默认显示
-        const firstWithSun = providersWithSun[0];
-        const sunrise = firstWithSun ? this.formatSunTime(firstWithSun.sunrise) : '--';
-        const sunset = firstWithSun ? this.formatSunTime(firstWithSun.sunset) : '--';
+        // 使用Open-Meteo的日出日落数据（统一显示）
+        const sunrise = day.sunrise ? this.formatSunTime(day.sunrise) : '--';
+        const sunset = day.sunset ? this.formatSunTime(day.sunset) : '--';
 
         // 生成表格列头
         const headerHtml = `
@@ -422,23 +426,22 @@ class WeatherCompare {
             <div class="table-header-cell">最高温</div>
             <div class="table-header-cell">最低温</div>
             <div class="table-header-cell">天气</div>
-            ${showSunColumn ? '<div class="table-header-cell">日照</div>' : ''}
+            <div class="table-header-cell">日照</div>
         `;
 
-        // 生成表格行
+        // 生成表格行 - 所有供应商都显示Open-Meteo的日照数据
         const rowsHtml = sortedProviders.map(p => {
-            const sunCell = showSunColumn ? `
-                <div class="sun-cell">
-                    <span class="sun-time"><i class="fas fa-sun"></i> ${p.sunrise ? this.formatSunTime(p.sunrise) : '--'}</span>
-                    <span class="sun-time"><i class="fas fa-moon"></i> ${p.sunset ? this.formatSunTime(p.sunset) : '--'}</span>
-                </div>
-            ` : '';
-
-            // 计算行的grid columns
-            const gridCols = showSunColumn ? '100px repeat(5, 1fr)' : '100px repeat(4, 1fr)';
+            // 所有供应商都使用Open-Meteo的日出日落数据
+            const sunData = day.sunrise && day.sunset ? {
+                sunrise: day.sunrise,
+                sunset: day.sunset
+            } : p.sunrise && p.sunset ? {
+                sunrise: p.sunrise,
+                sunset: p.sunset
+            } : null;
 
             return `
-                <div class="table-row" style="grid-template-columns: ${gridCols};" onclick="weatherCompare.showDayDetail('${day.date}', '${p.providerId}')">
+                <div class="table-row" onclick="weatherCompare.showDayDetail('${day.date}', '${p.providerId}')">
                     <div class="provider-cell">
                         <div class="provider-icon" style="background: ${p.color};">${p.icon}</div>
                         <span class="provider-name">${p.providerName}</span>
@@ -448,18 +451,13 @@ class WeatherCompare {
                     <div class="weather-cell">
                         ${this.getWeatherIcon(p.weatherDesc)} ${p.weatherDesc || '--'}
                     </div>
-                    ${sunCell}
+                    <div class="sun-cell">
+                        <span class="sun-time"><i class="fas fa-sun"></i> ${sunData ? this.formatSunTime(sunData.sunrise) : '--'}</span>
+                        <span class="sun-time"><i class="fas fa-moon"></i> ${sunData ? this.formatSunTime(sunData.sunset) : '--'}</span>
+                    </div>
                 </div>
             `;
         }).join('');
-
-        // 默认显示行的日照
-        const defaultSunCell = showSunColumn ? `
-            <div class="day-sun">
-                <span><i class="fas fa-sun"></i> ${sunrise}</span>
-                <span><i class="fas fa-moon"></i> ${sunset}</span>
-            </div>
-        ` : '';
 
         section.innerHTML = `
             <div class="day-header" onclick="weatherCompare.toggleDay('${day.date}')">
@@ -474,11 +472,14 @@ class WeatherCompare {
                         <span class="high">${high}</span>
                         <span class="low">/${low}</span>
                     </span>
-                    ${defaultSunCell}
+                    <div class="day-sun">
+                        <span><i class="fas fa-sun"></i> ${sunrise}</span>
+                        <span><i class="fas fa-moon"></i> ${sunset}</span>
+                    </div>
                 </div>
             </div>
             <div class="provider-table">
-                <div class="table-header" style="grid-template-columns: ${showSunColumn ? '100px repeat(5, 1fr)' : '100px repeat(4, 1fr)'};">
+                <div class="table-header">
                     ${headerHtml}
                 </div>
                 ${rowsHtml}
@@ -506,6 +507,10 @@ class WeatherCompare {
 
         const dateInfo = formatDate(dateKey);
         const city = this.cities[this.currentCity];
+
+        // 使用Open-Meteo的日出日落数据（统一）
+        const sunrise = day.sunrise ? this.formatSunTime(day.sunrise) : '--';
+        const sunset = day.sunset ? this.formatSunTime(day.sunset) : '--';
 
         const modalHeader = document.getElementById('modal-header');
         const modalBody = document.getElementById('modal-body');
@@ -557,11 +562,11 @@ class WeatherCompare {
                     </div>
                     <div class="detail-row">
                         <span class="detail-label">日出</span>
-                        <span class="detail-value">${provider.sunrise ? this.formatTime(provider.sunrise) : '--'}</span>
+                        <span class="detail-value">${sunrise}</span>
                     </div>
                     <div class="detail-row">
                         <span class="detail-label">日落</span>
-                        <span class="detail-value">${provider.sunset ? this.formatTime(provider.sunset) : '--'}</span>
+                        <span class="detail-value">${sunset}</span>
                     </div>
                 </div>
             </div>
