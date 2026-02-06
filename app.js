@@ -1,5 +1,5 @@
 /**
- * 天气预报对比应用
+ * 天气预报对比应用 - 现代化版本
  */
 
 class WeatherCompare {
@@ -210,6 +210,82 @@ class WeatherCompare {
             });
     }
 
+    // 获取SVG天气图标
+    getWeatherIcon(weatherDesc) {
+        const iconMap = {
+            '晴': 'icon-sunny',
+            '晴朗': 'icon-sunny',
+            '晴间多云': 'icon-cloudy',
+            '少云': 'icon-sunny',
+            '多云': 'icon-cloudy',
+            '阴': 'icon-overcast',
+            '阴天': 'icon-overcast',
+            '雾': 'icon-fog',
+            '霾': 'icon-haze',
+            '轻度霾': 'icon-haze',
+            '中度霾': 'icon-haze',
+            '重度霾': 'icon-haze',
+            '小雨': 'icon-light-rain',
+            '中雨': 'icon-moderate-rain',
+            '大雨': 'icon-heavy-rain',
+            '暴雨': 'icon-heavy-rain',
+            '阵雨': 'icon-light-rain',
+            '雷阵雨': 'icon-thunder-rain',
+            '雨夹雪': 'icon-light-rain',
+            '小雪': 'icon-light-snow',
+            '中雪': 'icon-moderate-snow',
+            '大雪': 'icon-heavy-snow',
+            '暴雪': 'icon-heavy-snow'
+        };
+
+        const iconId = iconMap[weatherDesc] || 'icon-cloudy';
+        return `<svg class="weather-svg-icon" viewBox="0 0 64 64">
+            <use href="#${iconId}"/>
+        </svg>`;
+    }
+
+    // 获取大图标（用于弹窗）
+    getWeatherIconLarge(weatherDesc) {
+        const iconMap = {
+            '晴': 'icon-sunny',
+            '晴朗': 'icon-sunny',
+            '晴间多云': 'icon-cloudy',
+            '少云': 'icon-sunny',
+            '多云': 'icon-cloudy',
+            '阴': 'icon-overcast',
+            '阴天': 'icon-overcast',
+            '雾': 'icon-fog',
+            '霾': 'icon-haze',
+            '小雨': 'icon-light-rain',
+            '中雨': 'icon-moderate-rain',
+            '大雨': 'icon-heavy-rain',
+            '暴雨': 'icon-heavy-rain',
+            '阵雨': 'icon-light-rain',
+            '雷阵雨': 'icon-thunder-rain',
+            '雨夹雪': 'icon-light-rain',
+            '小雪': 'icon-light-snow',
+            '中雪': 'icon-moderate-snow',
+            '大雪': 'icon-heavy-snow',
+            '暴雪': 'icon-heavy-snow'
+        };
+
+        const iconId = iconMap[weatherDesc] || 'icon-cloudy';
+        return `<svg class="weather-svg-icon weather-large-icon" viewBox="0 0 64 64">
+            <use href="#${iconId}"/>
+        </svg>`;
+    }
+
+    // 获取供应商图标
+    getProviderIcon(providerId) {
+        const iconMap = {
+            'openmeteo': '<i class="fas fa-satellite-dish"></i>',
+            'openweathermap': '<i class="fas fa-cloud"></i>',
+            'weatherapi': '<i class="fas fa-temperature-high"></i>',
+            'amap': '<i class="fas fa-map-marked-alt"></i>'
+        };
+        return iconMap[providerId] || '<i class="fas fa-cloud"></i>';
+    }
+
     createDaySection(day) {
         const section = document.createElement('div');
         section.className = 'day-section';
@@ -224,7 +300,7 @@ class WeatherCompare {
                     <span class="day-weekday">${dateInfo.weekday}</span>
                 </div>
                 <div class="day-weather">
-                    <span class="day-weather-icon">${day.weatherIcon || '☀️'}</span>
+                    <span class="day-weather-icon">${this.getWeatherIcon(day.weatherDesc)}</span>
                     <span class="day-weather-desc">${day.weatherDesc || '暂无数据'}</span>
                 </div>
             </div>
@@ -238,7 +314,7 @@ class WeatherCompare {
                 ${Object.values(day.providers).map(p => `
                     <div class="table-row" onclick="weatherCompare.showDayDetail('${day.date}', '${p.providerId}')">
                         <div class="provider-cell">
-                            <div class="provider-icon" style="background: ${p.color || '#667eea'};">${p.icon || '☀️'}</div>
+                            <div class="provider-icon ${p.providerId}">${this.getProviderIcon(p.providerId)}</div>
                             <span class="provider-name">${p.providerName}</span>
                         </div>
                         <div class="temp-cell">
@@ -248,7 +324,7 @@ class WeatherCompare {
                             <span class="temp-low">${formatTemp(p.tempLow)}</span>
                         </div>
                         <div class="temp-cell">
-                            <span>${p.weatherIcon || '-'} ${p.weatherDesc || '-'}</span>
+                            <span>${this.getWeatherIcon(p.weatherDesc)} ${p.weatherDesc || '-'}</span>
                         </div>
                     </div>
                 `).join('')}
@@ -282,17 +358,20 @@ class WeatherCompare {
         const modalBody = document.getElementById('modal-body');
 
         modalHeader.innerHTML = `
-            <div class="modal-city-title">${city.name}</div>
+            <div class="modal-city-title">
+                <i class="fas fa-map-marker-alt" style="color: #667eea;"></i>
+                ${city.name}
+            </div>
             <div class="modal-date-title">${dateInfo.full} ${dateInfo.weekday}</div>
             <div class="modal-weather-summary">
                 <div class="summary-item">
-                    <div class="summary-icon">${provider.weatherIcon || '☀️'}</div>
+                    <div class="summary-icon">${this.getWeatherIconLarge(provider.weatherDesc)}</div>
                     <div class="summary-desc">${provider.weatherDesc || '暂无数据'}</div>
                 </div>
                 <div class="summary-item">
                     <div class="summary-temp">
                         <span class="summary-temp-high">${formatTemp(provider.tempHigh)}</span>
-                        <span> / </span>
+                        <span style="color: #b2bec3; font-size: 1.5rem;">/</span>
                         <span class="summary-temp-low">${formatTemp(provider.tempLow)}</span>
                     </div>
                 </div>
@@ -302,7 +381,7 @@ class WeatherCompare {
         modalBody.innerHTML = `
             <div class="detail-grid">
                 <div class="detail-card" style="border-top: 4px solid ${provider.color};">
-                    <div class="provider-icon" style="background: ${provider.color};">${provider.icon || '☀️'}</div>
+                    <div class="provider-icon" style="background: ${provider.color};">${this.getProviderIcon(provider.providerId)}</div>
                     <div class="provider-name">${provider.providerName}</div>
                     <div class="detail-row">
                         <span class="detail-label">体感温度</span>

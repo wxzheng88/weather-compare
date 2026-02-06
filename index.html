@@ -4,13 +4,70 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="天气预报对比工具 - 对比安达市和甘南县未来5天天气预报">
-    <meta name="keywords" weather, forecast, comparison, China>
+    <meta name="keywords" content="weather, forecast, comparison, China">
     <title>天气预报对比 | 安达市 vs 甘南县</title>
     <link rel="stylesheet" href="styles.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* 自定义SVG天气图标 */
+        .weather-svg-icon {
+            width: 48px;
+            height: 48px;
+            transition: transform 0.3s ease;
+        }
+        
+        .weather-svg-icon.sunny {
+            animation: rotate 20s linear infinite;
+        }
+        
+        .weather-svg-icon.cloudy {
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        .weather-svg-icon.rainy {
+            animation: rainDrop 1s ease-in-out infinite;
+        }
+        
+        .weather-svg-icon.snowy {
+            animation: snowFall 2s ease-in-out infinite;
+        }
+        
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+        
+        @keyframes rainDrop {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(3px); }
+        }
+        
+        @keyframes snowFall {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-5px) rotate(10deg); }
+        }
+        
+        /* 大图标样式 */
+        .weather-large-icon {
+            width: 80px;
+            height: 80px;
+        }
+        
+        /* 小图标样式 */
+        .weather-small-icon {
+            width: 32px;
+            height: 32px;
+        }
+    </style>
 </head>
 <body>
     <div class="app-container">
@@ -29,13 +86,29 @@
                 <!-- 左侧城市选择 -->
                 <aside class="city-sidebar">
                     <h2 class="sidebar-title">
-                        <i class="fas fa-map-marker-alt"></i>
+                        <i class="fas fa-layer-group"></i>
                         选择城市
                     </h2>
                     <ul class="city-list">
                         <li class="city-item active" data-city="anda">
                             <div class="city-info">
-                                <span class="city-icon">🏙️</span>
+                                <span class="city-icon">
+                                    <svg class="weather-svg-icon sunny" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <circle cx="32" cy="32" r="14" fill="#FFE066"/>
+                                        <g stroke="#FFD93D" stroke-width="4" stroke-linecap="round">
+                                            <line x1="32" y1="6" x2="32" y2="14"/>
+                                            <line x1="32" y1="50" x2="32" y2="58"/>
+                                            <line x1="6" y1="32" x2="14" y2="32"/>
+                                            <line x1="50" y1="32" x2="58" y2="32"/>
+                                            <line x1="13.8" y1="13.8" x2="20.2" y2="20.2"/>
+                                            <line x1="43.8" y1="43.8" x2="50.2" y2="50.2"/>
+                                            <line x1="13.8" y1="50.2" x2="20.2" y2="43.8"/>
+                                            <line x1="43.8" y1="20.2" x2="50.2" y2="13.8"/>
+                                        </g>
+                                        <rect x="18" y="36" width="28" height="12" rx="2" fill="#A8D5BA"/>
+                                        <rect x="22" y="24" width="20" height="14" rx="2" fill="#A8D5BA"/>
+                                    </svg>
+                                </span>
                                 <div class="city-details">
                                     <span class="city-name">安达市</span>
                                     <span class="city-province">黑龙江省</span>
@@ -44,7 +117,16 @@
                         </li>
                         <li class="city-item" data-city="gannan">
                             <div class="city-info">
-                                <span class="city-icon">🏙️</span>
+                                <span class="city-icon">
+                                    <svg class="weather-svg-icon cloudy" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <ellipse cx="24" cy="38" rx="18" ry="14" fill="#E8E8E8"/>
+                                        <ellipse cx="42" cy="36" rx="16" ry="13" fill="#F5F5F5"/>
+                                        <ellipse cx="32" cy="30" rx="20" ry="12" fill="#FFFFFF"/>
+                                        <circle cx="20" cy="28" r="8" fill="#F0F0F0"/>
+                                        <circle cx="40" cy="26" rx="10" fill="#FAFAFA"/>
+                                        <circle cx="30" cy="24" rx="12" fill="#FFFFFF"/>
+                                    </svg>
+                                </span>
                                 <div class="city-details">
                                     <span class="city-name">甘南县</span>
                                     <span class="city-province">黑龙江省</span>
@@ -58,7 +140,10 @@
                 <section class="weather-section">
                     <div class="weather-header" id="weather-header">
                         <div class="city-title">
-                            <h2 id="current-city-name">安达市</h2>
+                            <h2>
+                                <i class="fas fa-map-marker-alt"></i>
+                                <span id="current-city-name">安达市</span>
+                            </h2>
                             <span class="city-coords" id="current-city-coords">46.39°N, 125.32°E</span>
                         </div>
                         <button class="refresh-btn" id="refresh-btn" title="刷新数据">
@@ -118,8 +203,160 @@
         </div>
     </div>
 
+    <!-- SVG天气图标库 -->
+    <svg style="display: none;">
+        <!-- 晴朗 -->
+        <symbol id="icon-sunny" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="32" cy="32" r="14" fill="#FFE066"/>
+            <g stroke="#FFD93D" stroke-width="4" stroke-linecap="round">
+                <line x1="32" y1="6" x2="32" y2="14"/>
+                <line x1="32" y1="50" x2="32" y2="58"/>
+                <line x1="6" y1="32" x2="14" y2="32"/>
+                <line x1="50" y1="32" x2="58" y2="32"/>
+                <line x1="13.8" y1="13.8" x2="20.2" y2="20.2"/>
+                <line x1="43.8" y1="43.8" x2="50.2" y2="50.2"/>
+                <line x1="13.8" y1="50.2" x2="20.2" y2="43.8"/>
+                <line x1="43.8" y1="20.2" x2="50.2" y2="13.8"/>
+            </g>
+        </symbol>
+        
+        <!-- 多云 -->
+        <symbol id="icon-cloudy" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <ellipse cx="24" cy="38" rx="18" ry="14" fill="#E8E8E8"/>
+            <ellipse cx="42" cy="36" rx="16" ry="13" fill="#F5F5F5"/>
+            <ellipse cx="32" cy="30" rx="20" ry="12" fill="#FFFFFF"/>
+            <circle cx="20" cy="28" r="8" fill="#F0F0F0"/>
+            <circle cx="40" cy="26" rx="10" fill="#FAFAFA"/>
+            <circle cx="30" cy="24" rx="12" fill="#FFFFFF"/>
+        </symbol>
+        
+        <!-- 阴天 -->
+        <symbol id="icon-overcast" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <ellipse cx="32" cy="40" rx="28" ry="16" fill="#BDBDBD"/>
+            <ellipse cx="32" cy="32" rx="26" ry="14" fill="#9E9E9E"/>
+            <ellipse cx="32" cy="26" rx="22" ry="12" fill="#757575"/>
+        </symbol>
+        
+        <!-- 小雨 -->
+        <symbol id="icon-light-rain" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <ellipse cx="32" cy="24" rx="20" ry="12" fill="#E0E0E0"/>
+            <circle cx="22" cy="40" r="3" fill="#64B5F6"/>
+            <circle cx="32" cy="44" r="3" fill="#64B5F6"/>
+            <circle cx="42" cy="40" r="3" fill="#64B5F6"/>
+        </symbol>
+        
+        <!-- 中雨 -->
+        <symbol id="icon-moderate-rain" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <ellipse cx="32" cy="22" rx="20" ry="12" fill="#E0E0E0"/>
+            <circle cx="18" cy="40" r="4" fill="#42A5F5"/>
+            <circle cx="28" cy="46" r="4" fill="#42A5F5"/>
+            <circle cx="38" cy="42" r="4" fill="#42A5F5"/>
+            <circle cx="46" cy="38" r="4" fill="#42A5F5"/>
+        </symbol>
+        
+        <!-- 大雨 -->
+        <symbol id="icon-heavy-rain" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <ellipse cx="32" cy="20" rx="22" ry="14" fill="#BDBDBD"/>
+            <circle cx="16" cy="40" r="5" fill="#2196F3"/>
+            <circle cx="26" cy="48" r="5" fill="#2196F3"/>
+            <circle cx="38" cy="44" r="5" fill="#2196F3"/>
+            <circle cx="48" cy="38" r="5" fill="#2196F3"/>
+        </symbol>
+        
+        <!-- 雷阵雨 -->
+        <symbol id="icon-thunder-rain" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <ellipse cx="28" cy="22" rx="18" ry="10" fill="#BDBDBD"/>
+            <path d="M28 38 L24 50 L32 44 L28 58 L36 46 L32 52 L40 38" fill="#FFD93D"/>
+        </symbol>
+        
+        <!-- 小雪 -->
+        <symbol id="icon-light-snow" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <ellipse cx="32" cy="24" rx="18" ry="10" fill="#E8E8E8"/>
+            <circle cx="20" cy="40" r="3" fill="#B39DDB"/>
+            <circle cx="32" cy="44" r="3" fill="#B39DDB"/>
+            <circle cx="44" cy="40" r="3" fill="#B39DDB"/>
+            <circle cx="26" cy="50" r="3" fill="#B39DDB"/>
+            <circle cx="38" cy="52" r="3" fill="#B39DDB"/>
+        </symbol>
+        
+        <!-- 中雪 -->
+        <symbol id="icon-moderate-snow" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <ellipse cx="32" cy="22" rx="20" ry="12" fill="#E0E0E0"/>
+            <circle cx="16" cy="38" r="4" fill="#9575CD"/>
+            <circle cx="26" cy="46" r="4" fill="#9575CD"/>
+            <circle cx="38" cy="42" r="4" fill="#9575CD"/>
+            <circle cx="48" cy="36" r="4" fill="#9575CD"/>
+            <circle cx="22" cy="54" r="4" fill="#9575CD"/>
+            <circle cx="36" cy="56" r="4" fill="#9575CD"/>
+        </symbol>
+        
+        <!-- 大雪 -->
+        <symbol id="icon-heavy-snow" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <ellipse cx="32" cy="20" rx="22" ry="14" fill="#BDBDBD"/>
+            <circle cx="14" cy="38" r="5" fill="#7E57C2"/>
+            <circle cx="24" cy="48" r="5" fill="#7E57C2"/>
+            <circle cx="36" cy="44" r="5" fill="#7E57C2"/>
+            <circle cx="48" cy="38" r="5" fill="#7E57C2"/>
+            <circle cx="18" cy="56" r="5" fill="#7E57C2"/>
+            <circle cx="32" cy="60" r="5" fill="#7E57C2"/>
+            <circle cx="44" cy="54" r="5" fill="#7E57C2"/>
+        </symbol>
+        
+        <!-- 雾 -->
+        <symbol id="icon-fog" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <line x1="8" y1="24" x2="56" y2="24" stroke="#BDBDBD" stroke-width="4" stroke-linecap="round"/>
+            <line x1="8" y1="32" x2="56" y2="32" stroke="#BDBDBD" stroke-width="4" stroke-linecap="round"/>
+            <line x1="8" y1="40" x2="56" y2="40" stroke="#BDBDBD" stroke-width="4" stroke-linecap="round"/>
+        </symbol>
+        
+        <!-- 霾 -->
+        <symbol id="icon-haze" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="32" cy="32" r="16" fill="#9E9E9E" opacity="0.5"/>
+            <line x1="12" y1="28" x2="52" y2="28" stroke="#757575" stroke-width="3" stroke-linecap="round"/>
+            <line x1="12" y1="36" x2="52" y2="36" stroke="#757575" stroke-width="3" stroke-linecap="round"/>
+        </symbol>
+    </svg>
+
     <script src="cities.js"></script>
     <script src="providers.js"></script>
     <script src="app.js"></script>
+    
+    <script>
+        // 天气图标映射
+        const weatherIconMap = {
+            '晴': 'icon-sunny',
+            '晴朗': 'icon-sunny',
+            '晴间多云': 'icon-cloudy',
+            '少云': 'icon-sunny',
+            '多云': 'icon-cloudy',
+            '阴': 'icon-overcast',
+            '阴天': 'icon-overcast',
+            '雾': 'icon-fog',
+            '霾': 'icon-haze',
+            '轻度霾': 'icon-haze',
+            '中度霾': 'icon-haze',
+            '重度霾': 'icon-haze',
+            '小雨': 'icon-light-rain',
+            '中雨': 'icon-moderate-rain',
+            '大雨': 'icon-heavy-rain',
+            '暴雨': 'icon-heavy-rain',
+            '阵雨': 'icon-light-rain',
+            '雷阵雨': 'icon-thunder-rain',
+            '雨夹雪': 'icon-light-rain',
+            '小雪': 'icon-light-snow',
+            '中雪': 'icon-moderate-snow',
+            '大雪': 'icon-heavy-snow',
+            '暴雪': 'icon-heavy-snow'
+        };
+
+        // 获取天气SVG图标
+        function getWeatherIcon(weatherDesc, size = 'medium') {
+            const iconId = weatherIconMap[weatherDesc] || 'icon-cloudy';
+            const sizeClass = size === 'large' ? 'weather-large-icon' : (size === 'small' ? 'weather-small-icon' : '');
+            return `<svg class="weather-svg-icon ${sizeClass}" viewBox="0 0 64 64">
+                <use href="#${iconId}"/>
+            </svg>`;
+        }
+    </script>
 </body>
 </html>
