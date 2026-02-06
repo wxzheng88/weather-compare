@@ -620,6 +620,12 @@ body {
 .provider-link {
     font-weight: 500;
     color: var(--text-secondary);
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.provider-link:hover {
+    color: var(--primary-color);
 }
 
 .separator {
