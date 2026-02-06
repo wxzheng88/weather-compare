@@ -422,7 +422,7 @@ body {
 
 .table-header {
     display: grid;
-    grid-template-columns: 120px repeat(4, 1fr);
+    grid-template-columns: 100px repeat(4, 1fr);
     gap: 12px;
     padding: 10px 0;
     border-bottom: 1px solid var(--border-color);
@@ -444,7 +444,7 @@ body {
 
 .table-row {
     display: grid;
-    grid-template-columns: 120px repeat(4, 1fr);
+    grid-template-columns: 100px repeat(4, 1fr);
     gap: 12px;
     padding: 12px 0;
     border-bottom: 1px solid #f0f0f0;
@@ -498,6 +498,33 @@ body {
     justify-content: center;
     gap: 6px;
     font-size: 0.9rem;
+}
+
+.sun-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 0.8rem;
+}
+
+.sun-time {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--text-secondary);
+}
+
+.sun-time i {
+    font-size: 0.7rem;
+    width: 12px;
+}
+
+.sun-time:first-child i {
+    color: #fdcb6e;
+}
+
+.sun-time:last-child i {
+    color: #6c5ce7;
 }
 
 /* Expand Toggle */

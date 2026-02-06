@@ -322,6 +322,30 @@ class WeatherCompare {
         });
     }
 
+    // 格式化日出日落时间
+    formatSunTime(timeStr) {
+        if (!timeStr) return '--';
+        if (typeof timeStr === 'string' && timeStr.includes('T')) {
+            // Open-Meteo 格式: 2026-02-06T07:12:00
+            return timeStr.substring(11, 16);
+        }
+        return timeStr;
+    }
+
+    // 判断昼夜
+    getDayPhase(sunrise, sunset) {
+        if (!sunrise || !sunset) return null;
+        const now = new Date();
+        const currentHour = now.getHours();
+        const sunriseHour = parseInt(this.formatSunTime(sunrise).split(':')[0]);
+        const sunsetHour = parseInt(this.formatSunTime(sunset).split(':')[0]);
+
+        if (currentHour >= sunriseHour && currentHour < sunsetHour) {
+            return 'day';
+        }
+        return 'night';
+    }
+
     renderWeather() {
         const container = document.getElementById('weather-content');
         if (!container) return;
@@ -368,6 +392,11 @@ class WeatherCompare {
         const low = formatTemp(day.tempLow);
         const sortedProviders = this.getSortedProviders(day.providers);
 
+        // 获取第一个有日出日落数据的供应商
+        const firstProvider = sortedProviders.find(p => p.sunrise && p.sunset);
+        const sunrise = firstProvider ? this.formatSunTime(firstProvider.sunrise) : '--';
+        const sunset = firstProvider ? this.formatSunTime(firstProvider.sunset) : '--';
+
         section.innerHTML = `
             <div class="day-header" onclick="weatherCompare.toggleDay('${day.date}')">
                 <div class="day-title">
@@ -389,6 +418,7 @@ class WeatherCompare {
                     <div class="table-header-cell">最高温</div>
                     <div class="table-header-cell">最低温</div>
                     <div class="table-header-cell">天气</div>
+                    <div class="table-header-cell">日出/日落</div>
                 </div>
                 ${sortedProviders.map(p => `
                     <div class="table-row" onclick="weatherCompare.showDayDetail('${day.date}', '${p.providerId}')">
@@ -400,6 +430,10 @@ class WeatherCompare {
                         <div class="temp-cell">${formatTemp(p.tempLow)}</div>
                         <div class="weather-cell">
                             ${this.getWeatherIcon(p.weatherDesc)} ${p.weatherDesc || '--'}
+                        </div>
+                        <div class="sun-cell">
+                            <span class="sun-time"><i class="fas fa-sun"></i> ${p.sunrise ? this.formatSunTime(p.sunrise) : '--'}</span>
+                            <span class="sun-time"><i class="fas fa-moon"></i> ${p.sunset ? this.formatSunTime(p.sunset) : '--'}</span>
                         </div>
                     </div>
                 `).join('')}
