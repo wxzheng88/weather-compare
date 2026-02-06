@@ -421,7 +421,7 @@ class WeatherAPI {
     // 高德天气 API
     async fetchAmapWeather(city) {
         try {
-            // 第一步：通过经纬度获取城市编码
+            // 第一步：通过经纬度获取城市编码（逆地理编码）
             const geoUrl = `${this.provider.geoUrl}?key=${this.provider.apiKey}&location=${city.longitude},${city.latitude}`;
             const geoResponse = await fetch(geoUrl);
             
@@ -430,13 +430,17 @@ class WeatherAPI {
             }
             
             const geoData = await geoResponse.json();
-            const adcode = geoData.geocodes?.[0]?.adcode || '';
+            
+            // 修正：逆地理编码返回的是 regeocode.addressComponent.adcode
+            const adcode = geoData.regeocode?.addressComponent?.adcode || '';
+            const district = geoData.regeocode?.addressComponent?.district || city.name;
             
             if (!adcode) {
+                console.warn('高德返回数据:', geoData);
                 throw new Error('无法获取高德城市编码');
             }
             
-            console.log(`高德城市编码: ${adcode} (${geoData.geocodes?.[0]?.city || city.name})`);
+            console.log(`高德城市编码: ${adcode} (${district})`);
             
             // 第二步：通过城市编码获取天气预报
             const params = new URLSearchParams({
