@@ -269,7 +269,8 @@ class WeatherCompare {
         const modalBody = document.getElementById('modal-body');
 
         modalHeader.innerHTML = `
-            <div class="modal-city-title">${city.name} · ${dateInfo.full} ${dateInfo.weekday}</div>
+            <div class="modal-city-title">${city.name}</div>
+            <div class="modal-date-title">${dateInfo.full} · ${dateInfo.weekday}</div>
             <div class="modal-weather-summary">
                 <div class="summary-item">
                     <div class="summary-icon">${this.getWeatherIcon(provider.weatherDesc)}</div>
