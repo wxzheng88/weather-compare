@@ -154,54 +154,29 @@ class WeatherCompare {
         });
     }
 
-    // 添加并切换到搜索的城市
+    // 搜索并直接显示天气
     addAndSwitchCity(name, lat, lng, adcode) {
-        // 生成城市ID
-        const cityId = 'custom_' + adcode;
+        // 生成临时城市ID
+        const cityId = 'search_' + Date.now();
 
-        // 检查是否已存在
-        if (!this.cities[cityId]) {
-            // 添加到城市列表
-            this.cities[cityId] = {
-                name: name,
-                latitude: lat,
-                longitude: lng,
-                province: '',
-                amapCode: adcode,
-                isCustom: true
-            };
-        }
+        // 创建临时城市数据（不保存到全局）
+        const tempCity = {
+            name: name,
+            latitude: lat,
+            longitude: lng,
+            province: '',
+            amapCode: adcode,
+            isSearch: true
+        };
 
         // 更新当前城市
         this.currentCity = cityId;
+        this.cities[cityId] = tempCity;
 
-        // 更新UI
+        // 更新UI - 移除所有自定义城市的选中状态
         document.querySelectorAll('.city-item').forEach(item => {
             item.classList.remove('active');
         });
-
-        // 添加新的城市选项到列表
-        const cityList = document.querySelector('.city-list');
-        const existingItem = cityList.querySelector(`[data-city="${cityId}"]`);
-
-        if (!existingItem) {
-            const newItem = document.createElement('li');
-            newItem.className = 'city-item active';
-            newItem.dataset.city = cityId;
-            newItem.innerHTML = `
-                <span class="city-icon">📍</span>
-                <div class="city-details">
-                    <span class="city-name">${name}</span>
-                    <span class="city-province">搜索添加</span>
-                </div>
-            `;
-            newItem.addEventListener('click', () => {
-                this.switchCity(cityId);
-            });
-            cityList.appendChild(newItem);
-        } else {
-            existingItem.classList.add('active');
-        }
 
         // 清空搜索框和结果
         const searchInput = document.getElementById('city-search-input');
@@ -210,6 +185,12 @@ class WeatherCompare {
         if (searchResults) {
             searchResults.classList.remove('active');
             searchResults.innerHTML = '';
+        }
+
+        // 更新副标题
+        const subtitle = document.getElementById('subtitle');
+        if (subtitle) {
+            subtitle.textContent = `${name} · 未来5天预报`;
         }
 
         // 加载天气数据
@@ -224,6 +205,16 @@ class WeatherCompare {
         });
 
         this.currentCity = cityId;
+
+        // 恢复默认副标题
+        const subtitle = document.getElementById('subtitle');
+        if (subtitle) {
+            const city = this.cities[cityId];
+            if (city && !city.isSearch) {
+                subtitle.textContent = `安达市 vs 甘南县 · 未来5天预报`;
+            }
+        }
+
         this.loadWeatherData();
     }
 
