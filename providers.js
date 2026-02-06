@@ -1,6 +1,6 @@
 /**
  * 天气供应商API配置
- * 包含3家天气数据源的配置和API调用方法
+ * 包含4家天气数据源的配置和API调用方法
  */
 
 // API Keys配置（用户提供的Key）
@@ -51,7 +51,6 @@ const PROVIDERS = {
         icon: '🗺️',
         color: '#3498db',
         baseUrl: 'https://restapi.amap.com/v3/weather/weatherInfo',
-        geoUrl: 'https://restapi.amap.com/v3/geocode/regeo',
         requiresKey: true,
         apiKey: API_KEYS.amap,
         free: true
@@ -418,31 +417,18 @@ class WeatherAPI {
         };
     }
 
-    // 高德天气 API
+    // 高德天气 API - 使用预配置的城市编码
     async fetchAmapWeather(city) {
         try {
-            // 第一步：通过经纬度获取城市编码（逆地理编码）
-            const geoUrl = `${this.provider.geoUrl}?key=${this.provider.apiKey}&location=${city.longitude},${city.latitude}`;
-            const geoResponse = await fetch(geoUrl);
-            
-            if (!geoResponse.ok) {
-                throw new Error(`高德地理编码API错误: ${geoResponse.status}`);
-            }
-            
-            const geoData = await geoResponse.json();
-            
-            // 修正：逆地理编码返回的是 regeocode.addressComponent.adcode
-            const adcode = geoData.regeocode?.addressComponent?.adcode || '';
-            const district = geoData.regeocode?.addressComponent?.district || city.name;
+            // 直接使用预配置的城市编码
+            const adcode = city.amapCode;
             
             if (!adcode) {
-                console.warn('高德返回数据:', geoData);
-                throw new Error('无法获取高德城市编码');
+                throw new Error(`城市 ${city.name} 未配置高德编码`);
             }
             
-            console.log(`高德城市编码: ${adcode} (${district})`);
+            console.log(`高德天气: ${city.name} (编码: ${adcode})`);
             
-            // 第二步：通过城市编码获取天气预报
             const params = new URLSearchParams({
                 key: this.provider.apiKey,
                 city: adcode,
@@ -457,6 +443,11 @@ class WeatherAPI {
             }
             
             const data = await response.json();
+            
+            if (data.status !== '1') {
+                throw new Error(`高德错误: ${data.info} (${data.infocode})`);
+            }
+            
             return this.normalizeAmapWeather(data, city);
             
         } catch (error) {
@@ -499,5 +490,5 @@ class WeatherAPI {
 
 // 导出
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { PROVIDERS, API_KEYS, WEATHER_CODES, getWeatherDesc, formatDate, formatTemp, WeatherAPI };
+    module.exports = { PROVIDERS, API_KEYS, WEATHER_CODES, AMAP_CITY_CODES, getWeatherDesc, formatDate, formatTemp, WeatherAPI };
 }
