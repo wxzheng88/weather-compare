@@ -2,6 +2,9 @@
  * 天气预报对比应用
  */
 
+// 高德API Key
+const AMAP_KEY = '575be28eae5056df0dca62cfe31571d8';
+
 class WeatherCompare {
     constructor() {
         this.cities = CITIES;
@@ -9,6 +12,7 @@ class WeatherCompare {
         this.currentCity = DEFAULT_CITY;
         this.weatherData = {};
         this.isLoading = false;
+        this.searchTimeout = null;
 
         this.init();
     }
@@ -32,6 +36,7 @@ class WeatherCompare {
         }
 
         this.bindModalClose();
+        this.bindCitySearch();
     }
 
     bindModalClose() {
@@ -51,6 +56,164 @@ class WeatherCompare {
                 if (e.target === modalOverlay) this.closeModal();
             });
         }
+    }
+
+    // 绑定城市搜索功能
+    bindCitySearch() {
+        const searchInput = document.getElementById('city-search-input');
+        const searchResults = document.getElementById('city-search-results');
+
+        if (!searchInput) return;
+
+        searchInput.addEventListener('input', (e) => {
+            const keyword = e.target.value.trim();
+
+            clearTimeout(this.searchTimeout);
+
+            if (keyword.length < 2) {
+                searchResults.classList.remove('active');
+                searchResults.innerHTML = '';
+                return;
+            }
+
+            this.searchTimeout = setTimeout(() => {
+                this.searchCities(keyword);
+            }, 300);
+        });
+
+        searchInput.addEventListener('focus', () => {
+            if (searchInput.value.trim().length >= 2) {
+                searchResults.classList.add('active');
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.city-search')) {
+                searchResults.classList.remove('active');
+            }
+        });
+    }
+
+    // 搜索城市
+    async searchCities(keyword) {
+        const searchResults = document.getElementById('city-search-results');
+        if (!searchResults) return;
+
+        try {
+            const url = `https://restapi.amap.com/v3/config/district?keywords=${encodeURIComponent(keyword)}&subdistrict=0&key=${AMAP_KEY}&extensions=base`;
+            const response = await fetch(url);
+            const data = await response.json();
+
+            if (data.status === '1' && data.districts && data.districts.length > 0) {
+                const cities = data.districts.filter(d => d.level === 'city' || d.level === 'province');
+                this.renderSearchResults(cities, searchResults);
+            } else {
+                searchResults.innerHTML = '<div class="city-search-item"><span class="city-info">未找到城市</span></div>';
+                searchResults.classList.add('active');
+            }
+        } catch (error) {
+            console.error('城市搜索失败:', error);
+            searchResults.innerHTML = '<div class="city-search-item"><span class="city-info">搜索失败，请重试</span></div>';
+            searchResults.classList.add('active');
+        }
+    }
+
+    // 渲染搜索结果
+    renderSearchResults(cities, container) {
+        if (cities.length === 0) {
+            container.innerHTML = '<div class="city-search-item"><span class="city-info">未找到城市</span></div>';
+            container.classList.add('active');
+            return;
+        }
+
+        const html = cities.map(city => {
+            const [lng, lat] = city.center.split(',');
+            return `
+                <div class="city-search-item" data-name="${city.name}" data-lat="${lat}" data-lng="${lng}" data-adcode="${city.adcode}">
+                    <span class="city-icon">🔍</span>
+                    <div class="city-info">
+                        <span class="city-name">${city.name}</span>
+                        <span class="city-coords">${parseFloat(lat).toFixed(2)}°N, ${parseFloat(lng).toFixed(2)}°E</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        container.innerHTML = html;
+        container.classList.add('active');
+
+        // 绑定点击事件
+        container.querySelectorAll('.city-search-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                const name = item.dataset.name;
+                const lat = parseFloat(item.dataset.lat);
+                const lng = parseFloat(item.dataset.lng);
+                const adcode = item.dataset.adcode;
+                this.addAndSwitchCity(name, lat, lng, adcode);
+            });
+        });
+    }
+
+    // 添加并切换到搜索的城市
+    addAndSwitchCity(name, lat, lng, adcode) {
+        // 生成城市ID
+        const cityId = 'custom_' + adcode;
+
+        // 检查是否已存在
+        if (!this.cities[cityId]) {
+            // 添加到城市列表
+            this.cities[cityId] = {
+                name: name,
+                latitude: lat,
+                longitude: lng,
+                province: '',
+                amapCode: adcode,
+                isCustom: true
+            };
+        }
+
+        // 更新当前城市
+        this.currentCity = cityId;
+
+        // 更新UI
+        document.querySelectorAll('.city-item').forEach(item => {
+            item.classList.remove('active');
+        });
+
+        // 添加新的城市选项到列表
+        const cityList = document.querySelector('.city-list');
+        const existingItem = cityList.querySelector(`[data-city="${cityId}"]`);
+
+        if (!existingItem) {
+            const newItem = document.createElement('li');
+            newItem.className = 'city-item active';
+            newItem.dataset.city = cityId;
+            newItem.innerHTML = `
+                <span class="city-icon">📍</span>
+                <div class="city-details">
+                    <span class="city-name">${name}</span>
+                    <span class="city-province">搜索添加</span>
+                </div>
+            `;
+            newItem.addEventListener('click', () => {
+                this.switchCity(cityId);
+            });
+            cityList.appendChild(newItem);
+        } else {
+            existingItem.classList.add('active');
+        }
+
+        // 清空搜索框和结果
+        const searchInput = document.getElementById('city-search-input');
+        const searchResults = document.getElementById('city-search-results');
+        if (searchInput) searchInput.value = '';
+        if (searchResults) {
+            searchResults.classList.remove('active');
+            searchResults.innerHTML = '';
+        }
+
+        // 加载天气数据
+        this.loadWeatherData();
     }
 
     switchCity(cityId) {
