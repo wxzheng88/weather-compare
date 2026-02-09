@@ -602,7 +602,7 @@ class WeatherCompare {
             if (hourlyData && hourlyData.length > 0) {
                 this.renderHourlyWeather(hourlyData, hourlyContainer);
                 hourlyLoading.style.display = 'none';
-                hourlyContainer.style.display = 'grid';
+                hourlyContainer.style.display = 'flex';
             } else {
                 throw new Error('无小时数据');
             }
