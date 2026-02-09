@@ -881,25 +881,48 @@ body {
 }
 
 .hourly-container {
-    display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    gap: 10px;
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding: 8px 4px 16px;
+    scrollbar-width: thin;
+    scrollbar-color: #dee2e6 transparent;
+    -webkit-overflow-scrolling: touch;
+}
+
+.hourly-container::-webkit-scrollbar {
+    height: 8px;
+}
+
+.hourly-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.hourly-container::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+.hourly-container::-webkit-scrollbar-thumb:hover {
+    background: #a1a1a1;
 }
 
 .hourly-item {
+    flex-shrink: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 6px;
-    padding: 12px 8px;
+    gap: 8px;
+    padding: 14px 12px;
     background: #f8f9fa;
     border-radius: 12px;
+    min-width: 72px;
     transition: all 0.2s ease;
 }
 
 .hourly-item:hover {
     background: #e9ecef;
-    transform: translateY(-2px);
 }
 
 .hourly-item.current {
@@ -908,7 +931,7 @@ body {
 }
 
 .hourly-time {
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     font-weight: 600;
     color: #495057;
 }
@@ -918,12 +941,12 @@ body {
 }
 
 .hourly-icon {
-    font-size: 1.8rem;
+    font-size: 2rem;
     line-height: 1;
 }
 
 .hourly-temp {
-    font-size: 1.1rem;
+    font-size: 1.2rem;
     font-weight: 600;
     color: #1a1a2e;
 }
@@ -932,19 +955,13 @@ body {
     display: flex;
     align-items: center;
     gap: 4px;
-    font-size: 0.75rem;
+    font-size: 0.8rem;
     color: #6c757d;
 }
 
 .hourly-precip i {
     font-size: 0.7rem;
     color: #2196F3;
-}
-
-@media (max-width: 480px) {
-    .hourly-container {
-        grid-template-columns: repeat(4, 1fr);
-    }
 }
 
 /* =====================
