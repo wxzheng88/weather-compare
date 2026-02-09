@@ -500,7 +500,7 @@ class WeatherCompare {
         }
     }
 
-    showDayDetail(dateKey, providerId) {
+    async showDayDetail(dateKey, providerId) {
         const day = this.weatherData.days[dateKey];
         const provider = day?.providers[providerId];
         if (!provider) return;
@@ -508,7 +508,6 @@ class WeatherCompare {
         const dateInfo = formatDate(dateKey);
         const city = this.cities[this.currentCity];
 
-        // 使用Open-Meteo的日出日落数据（统一）
         const sunrise = day.sunrise ? this.formatSunTime(day.sunrise) : '--';
         const sunset = day.sunset ? this.formatSunTime(day.sunset) : '--';
 
@@ -533,7 +532,7 @@ class WeatherCompare {
             </div>
         `;
 
-        modalBody.innerHTML = `
+        const detailContent = `
             <div class="detail-grid">
                 <div class="detail-card" style="border-left-color: ${provider.color};">
                     <div class="provider-info">
@@ -570,9 +569,71 @@ class WeatherCompare {
                     </div>
                 </div>
             </div>
+            <div class="hourly-section" id="hourly-section">
+                <div class="hourly-header">
+                    <i class="fas fa-clock"></i>
+                    <span>24小时预报</span>
+                </div>
+                <div class="hourly-loading" id="hourly-loading">
+                    <div class="spinner-small"></div>
+                    <span>加载中...</span>
+                </div>
+                <div class="hourly-container" id="hourly-container" style="display: none;"></div>
+            </div>
         `;
 
+        modalBody.innerHTML = detailContent;
         document.getElementById('detail-modal').classList.add('active');
+
+        this.loadHourlyWeather(dateKey);
+    }
+
+    async loadHourlyWeather(dateKey) {
+        const hourlyContainer = document.getElementById('hourly-container');
+        const hourlyLoading = document.getElementById('hourly-loading');
+
+        if (!hourlyContainer) return;
+
+        try {
+            const city = this.cities[this.currentCity];
+            const api = new WeatherAPI('openmeteo');
+            const hourlyData = await api.fetchHourly(city, dateKey);
+
+            if (hourlyData && hourlyData.length > 0) {
+                this.renderHourlyWeather(hourlyData, hourlyContainer);
+                hourlyLoading.style.display = 'none';
+                hourlyContainer.style.display = 'flex';
+            } else {
+                throw new Error('无小时数据');
+            }
+        } catch (error) {
+            console.error('获取小时天气失败:', error);
+            hourlyLoading.innerHTML = '<span class="hourly-error">暂无可用的小时预报</span>';
+        }
+    }
+
+    renderHourlyWeather(hourlyData, container) {
+        const currentHour = new Date().getHours();
+        const relevantHours = hourlyData.filter((_, index) => index % 2 === 0 || index === hourlyData.length - 1);
+
+        const html = relevantHours.map(hour => {
+            const hourNum = parseInt(hour.time.split(':')[0]);
+            const isCurrentHour = hourNum === currentHour;
+
+            return `
+                <div class="hourly-item ${isCurrentHour ? 'current' : ''}">
+                    <div class="hourly-time">${hour.time}</div>
+                    <div class="hourly-icon">${hour.weatherIcon}</div>
+                    <div class="hourly-temp">${hour.temp}°</div>
+                    <div class="hourly-precip">
+                        <i class="fas fa-tint"></i>
+                        ${hour.precipProb}%
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        container.innerHTML = html;
     }
 
     formatTime(timeStr) {

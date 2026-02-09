@@ -422,38 +422,134 @@ class WeatherAPI {
         try {
             // 直接使用预配置的城市编码
             const adcode = city.amapCode;
-            
+
             if (!adcode) {
                 throw new Error(`城市 ${city.name} 未配置高德编码`);
             }
-            
+
             console.log(`高德天气: ${city.name} (编码: ${adcode})`);
-            
+
             const params = new URLSearchParams({
                 key: this.provider.apiKey,
                 city: adcode,
                 extensions: 'all'
             });
-            
+
             const url = `${this.provider.baseUrl}?${params}`;
             const response = await fetch(url);
-            
+
             if (!response.ok) {
                 throw new Error(`高德天气API错误: ${response.status}`);
             }
-            
+
             const data = await response.json();
-            
+
             if (data.status !== '1') {
                 throw new Error(`高德错误: ${data.info} (${data.infocode})`);
             }
-            
+
             return this.normalizeAmapWeather(data, city);
-            
+
         } catch (error) {
             console.error('高德天气API失败:', error);
             throw error;
         }
+    }
+
+    // 获取小时级天气数据（用于详情弹窗）
+    async fetchHourlyWeather(city, date) {
+        const providerIds = ['openmeteo', 'weatherapi'];
+
+        for (const providerId of providerIds) {
+            try {
+                const api = new WeatherAPI(providerId);
+                const hourlyData = await api.fetchHourly(city, date);
+                if (hourlyData && hourlyData.length > 0) {
+                    return { providerId, hourly: hourlyData };
+                }
+            } catch (error) {
+                console.warn(`${providerId} 小时数据获取失败:`, error);
+                continue;
+            }
+        }
+
+        return null;
+    }
+
+    // Open-Meteo 小时数据
+    async fetchHourly(city, date) {
+        const params = new URLSearchParams({
+            latitude: city.latitude,
+            longitude: city.longitude,
+            hourly: 'temperature_2m,weathercode,precipitation_probability,windspeed_10m,uv_index',
+            timezone: 'Asia/Shanghai',
+            start_date: date,
+            end_date: date
+        });
+
+        const url = `${this.provider.baseUrl}?${params}`;
+        const response = await fetch(url);
+
+        if (!response.ok) {
+            throw new Error(`Open-Meteo API错误: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return this.normalizeHourly(data, 'openmeteo');
+    }
+
+    // WeatherAPI 小时数据
+    async fetchHourlyWeatherAPI(city, date) {
+        const params = new URLSearchParams({
+            key: this.provider.apiKey,
+            q: `${city.latitude},${city.longitude}`,
+            dt: date,
+            aqi: 'no',
+            alerts: 'no'
+        });
+
+        const baseUrl = 'https://api.weatherapi.com/v1/forecast.json';
+        const url = `${baseUrl}?${params}`;
+        const response = await fetch(url);
+
+        if (!response.ok) {
+            throw new Error(`WeatherAPI错误: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return this.normalizeHourly(data, 'weatherapi');
+    }
+
+    normalizeHourly(data, provider) {
+        if (provider === 'openmeteo') {
+            return data.hourly.time.map((time, index) => {
+                const weatherInfo = getWeatherDesc('openmeteo', data.hourly.weathercode?.[index] || 0);
+                return {
+                    time: time.substring(11, 16),
+                    temp: Math.round(data.hourly.temperature_2m?.[index] || 0),
+                    precipProb: data.hourly.precipitation_probability?.[index] || 0,
+                    windSpeed: data.hourly.windspeed_10m?.[index] || 0,
+                    uvIndex: data.hourly.uv_index?.[index] || 0,
+                    weatherDesc: weatherInfo.desc,
+                    weatherIcon: weatherInfo.icon
+                };
+            });
+        } else if (provider === 'weatherapi') {
+            const hourData = data.forecast?.forecastday?.[0]?.hour || [];
+            return hourData.map(hour => {
+                const weatherInfo = getWeatherDesc('weatherapi', hour.condition?.code || 0);
+                return {
+                    time: hour.time.substring(11, 16),
+                    temp: Math.round(hour.temp_c || 0),
+                    precipProb: hour.chance_of_rain || 0,
+                    windSpeed: hour.wind_kph || 0,
+                    uvIndex: hour.uv || 0,
+                    weatherDesc: hour.condition?.text || weatherInfo.desc,
+                    weatherIcon: weatherInfo.icon
+                };
+            });
+        }
+        return [];
     }
 
     normalizeAmapWeather(data, city) {
